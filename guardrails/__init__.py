@@ -1,0 +1,1 @@
+"""Paquete `guardrails` — reglas de seguridad previas a la aprobación."""

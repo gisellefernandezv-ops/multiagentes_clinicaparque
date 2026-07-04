@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Preview — Sistema de Aprobación de Facturas</title>
+  <style>
+    html, body, #root { height: 100%; }
+    body { margin: 0; background: #0F1117; }
+  </style>
+  <!-- React 18 UMD + Babel standalone (para interpretar JSX en el browser sin build step) -->
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.25.7/babel.min.js"></script>
+</head>
+<body>
+  <div id="root">Cargando componente...</div>
+
+  <script>
+    // Carga InvoiceApprovalSystem.jsx, lo transforma (export default → window.X) y lo monta.
+    fetch('InvoiceApprovalSystem.jsx')
+      .then(r => r.text())
+      .then(src => {
+        // Eliminar la asignación window.X que está al final para no duplicarla.
+        src = src.replace(/\n?\/\/ Bootstrap[\s\S]*?window\.InvoiceApprovalSystem = InvoiceApprovalSystem;\s*$/m, '');
+        // Convertir `export default InvoiceApprovalSystem;` en asignación a window.
+        const transformed = src.replace(
+          /export\s+default\s+InvoiceApprovalSystem\s*;?\s*$/,
+          'window.InvoiceApprovalSystem = InvoiceApprovalSystem;'
+        );
+        if (transformed === src) {
+          console.warn('[preview] No se encontró "export default InvoiceApprovalSystem" en el archivo.');
+        }
+        // Inyectar como nuevo <script type="text/babel"> para que Babel lo compile y ejecute.
+        const s = document.createElement('script');
+        s.type = 'text/babel';
+        s.setAttribute('data-presets', 'react');
+        s.textContent = transformed;
+        document.body.appendChild(s);
+        // Esperar al próximo tick para que Babel haya transformado y ejecutado.
+        setTimeout(() => {
+          if (!window.InvoiceApprovalSystem) {
+            document.getElementById('root').innerHTML =
+              '<div style="color:#EF4444;padding:24px;font-family:monospace">No se pudo cargar el componente. Revisá la consola del navegador.</div>';
+            return;
+          }
+          ReactDOM.createRoot(document.getElementById('root')).render(
+            React.createElement(window.InvoiceApprovalSystem)
+          );
+        }, 50);
+      })
+      .catch(err => {
+        document.getElementById('root').innerHTML =
+          '<div style="color:#EF4444;padding:24px;font-family:monospace">Error cargando InvoiceApprovalSystem.jsx: ' + err + '</div>';
+      });
+  </script>
+</body>
+</html>

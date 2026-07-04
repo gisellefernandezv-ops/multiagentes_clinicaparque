@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceFlow — Aprobación de Facturas</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <span class="logo">📋</span>
+            <h1>InvoiceFlow</h1>
+            <span class="version">v1.0 · Producto</span>
+        </div>
+        <div class="header-actions">
+            <button id="btn-ver-facturas" class="btn-header">
+                📋 Ver facturas
+            </button>
+            <button id="btn-agrupar" class="btn-header btn-header-accent">
+                📁 Agrupar facturas
+            </button>
+        </div>
+        <div class="health" id="health-bar">
+            <span class="dot loading"></span>
+            <span id="health-text">Verificando servicios…</span>
+        </div>
+    </header>
+
+    <nav class="tabs">
+        <button class="tab active" data-tab="dashboard">📊 Dashboard</button>
+        <button class="tab" data-tab="inbox">📥 Inbox</button>
+        <button class="tab" data-tab="chat">💬 Chat</button>
+        <button class="tab" data-tab="history">📜 Historial</button>
+        <button class="tab" data-tab="docs">📖 Docs</button>
+    </nav>
+
+    <main>
+        <!-- ============================================================ -->
+        <!-- DASHBOARD                                                    -->
+        <!-- ============================================================ -->
+        <section class="tab-content active" id="tab-dashboard">
+            <h2>Dashboard</h2>
+            <div class="cards">
+                <div class="card">
+                    <div class="card-label">En Inbox</div>
+                    <div class="card-value" id="stat-inbox">—</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Procesadas</div>
+                    <div class="card-value" id="stat-processed">—</div>
+                </div>
+                <div class="card">
+                    <div class="card-label">Rechazadas (archivos)</div>
+                    <div class="card-value" id="stat-rejected">—</div>
+                </div>
+                <div class="card approved">
+                    <div class="card-label">✅ Aprobadas</div>
+                    <div class="card-value" id="stat-approved">—</div>
+                </div>
+                <div class="card rejected">
+                    <div class="card-label">❌ Rechazadas</div>
+                    <div class="card-value" id="stat-rejected-decisions">—</div>
+                </div>
+                <div class="card escalated">
+                    <div class="card-label">⏫ Escaladas</div>
+                    <div class="card-value" id="stat-escalated">—</div>
+                </div>
+                <div class="card total">
+                    <div class="card-label">💰 Total aprobado</div>
+                    <div class="card-value" id="stat-total">—</div>
+                </div>
+            </div>
+            <h3>Últimos pagos procesados</h3>
+            <div class="table-wrap">
+                <table id="recent-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Factura</th>
+                            <th>Proveedor</th>
+                            <th>Monto</th>
+                            <th>Decisión</th>
+                            <th>Estado pago</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="6">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- INBOX                                                        -->
+        <!-- ============================================================ -->
+        <section class="tab-content" id="tab-inbox">
+            <h2>Inbox — Drop Folder</h2>
+            <p class="hint">
+                📁 Las facturas que lleguen al sistema se depositan en
+                <code>data/inbox/</code>. También podés subirlas acá:
+            </p>
+
+            <div class="upload-area">
+                <input type="file" id="upload-file" accept=".json,.txt">
+                <button id="upload-btn" class="btn-primary">📤 Subir al inbox</button>
+            </div>
+
+            <div class="actions">
+                <button id="process-all-btn" class="btn-primary">
+                    ▶️ Procesar todo el inbox
+                </button>
+                <button id="refresh-inbox-btn" class="btn-secondary">
+                    🔄 Refrescar
+                </button>
+            </div>
+
+            <h3>Facturas pendientes</h3>
+            <div class="table-wrap">
+                <table id="inbox-table">
+                    <thead>
+                        <tr>
+                            <th>Archivo</th>
+                            <th>Factura</th>
+                            <th>Proveedor</th>
+                            <th>Monto</th>
+                            <th>Tamaño</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="6">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- CHAT                                                         -->
+        <!-- ============================================================ -->
+        <section class="tab-content" id="tab-chat">
+            <h2>Chat con el sistema</h2>
+            <p class="hint">
+                💡 Indicá qué factura procesar. Ejemplos:
+                <code>procesá todo el inbox</code> ·
+                <code>procesá la factura INV-001</code> ·
+                <code>procesá /inbox/INV-002.json</code> ·
+                <code>qué hay en el inbox?</code> ·
+                <code>mostrame el historial</code>
+            </p>
+
+            <div class="chat-box" id="chat-messages"></div>
+
+            <div class="chat-input">
+                <input type="text" id="chat-input"
+                       placeholder="Escribí tu instrucción…">
+                <button id="chat-send" class="btn-primary">Enviar</button>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- HISTORIAL                                                    -->
+        <!-- ============================================================ -->
+        <section class="tab-content" id="tab-history">
+            <h2>Historial de pagos</h2>
+            <div class="actions">
+                <button class="filter-btn active" data-decision="">Todas</button>
+                <button class="filter-btn" data-decision="APPROVED">✅ Aprobadas</button>
+                <button class="filter-btn" data-decision="REJECTED">❌ Rechazadas</button>
+                <button class="filter-btn" data-decision="ESCALATED">⏫ Escaladas</button>
+            </div>
+            <div class="table-wrap">
+                <table id="history-table">
+                    <thead>
+                        <tr>
+                            <th>Fecha</th>
+                            <th>Factura</th>
+                            <th>Proveedor</th>
+                            <th>Monto</th>
+                            <th>Decisión</th>
+                            <th>Confirmación</th>
+                            <th>Estado</th>
+                            <th>Motivo</th>
+                        </tr>
+                    </thead>
+                    <tbody><tr><td colspan="8">Cargando…</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================================ -->
+        <!-- DOCS                                                         -->
+        <!-- ============================================================ -->
+        <section class="tab-content" id="tab-docs">
+            <h2>Cómo usar InvoiceFlow</h2>
+            <h3>3 formas de procesar facturas</h3>
+            <ol>
+                <li>
+                    <strong>Automática (watcher):</strong> copiá/pegá archivos
+                    en <code>platform/data/inbox/</code>. El watcher los detecta
+                    y los procesa automáticamente.
+                </li>
+                <li>
+                    <strong>Manual por chat:</strong> escribí en el chat
+                    <em>"procesá todo el inbox"</em> o
+                    <em>"procesá /inbox/INV-001.json"</em>.
+                </li>
+                <li>
+                    <strong>Manual por UI:</strong> andá a la pestaña Inbox,
+                    seleccioná un archivo y hacé click en "▶️ Procesar".
+                </li>
+            </ol>
+            <h3>Formatos aceptados</h3>
+            <h4>JSON (recomendado)</h4>
+            <pre><code>{
+  "invoice_id": "INV-2024-001",
+  "supplier_id": "SUP001",
+  "supplier_name": "TechCorp SA",
+  "amount": 50000,
+  "currency": "ARS",
+  "invoice_date": "2025-06-01"
+}</code></pre>
+            <h4>TXT (clave: valor, uno por línea)</h4>
+            <pre><code>invoice_id: INV-2024-001
+supplier_id: SUP001
+supplier_name: TechCorp SA
+amount: 50000
+currency: ARS
+invoice_date: 2025-06-01</code></pre>
+            <h3>Endpoints API</h3>
+            <ul>
+                <li><code>GET  /health</code> — estado de los microservicios</li>
+                <li><code>GET  /inbox</code> — lista facturas en inbox</li>
+                <li><code>POST /inbox/upload</code> — sube factura</li>
+                <li><code>POST /inbox/process/&lt;filename&gt;</code> — procesa una</li>
+                <li><code>POST /inbox/process-all</code> — procesa todas</li>
+                <li><code>POST /invoices</code> — procesa directo (sin inbox)</li>
+                <li><code>GET  /invoices</code> — historial</li>
+                <li><code>GET  /dashboard</code> — stats</li>
+                <li><code>POST /chat</code> — chat-driven</li>
+            </ul>
+            <p>Documentación interactiva: <a href="/docs" target="_blank">/docs</a></p>
+        </section>
+    </main>
+
+    <footer>
+        <span>InvoiceFlow © 2026 — Producto TP Sistemas Multiagentes (UP)</span>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,1 @@
+"""Paquete `rag` — ingesta y retrieval sobre ChromaDB."""

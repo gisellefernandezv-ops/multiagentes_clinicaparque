@@ -1,0 +1,1 @@
+"""Paquete `tools` — tools (FunctionTool) consumidas por los agentes."""

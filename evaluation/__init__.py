@@ -1,0 +1,1 @@
+"""Paquete `evaluation` — golden cases, LLM judge y métricas semánticas."""
