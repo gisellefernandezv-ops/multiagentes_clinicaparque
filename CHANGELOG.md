@@ -6,6 +6,51 @@ sigue [Semantic Versioning](https://semver.org/).
 
 ---
 
+## [1.2.0] — 2026-07-04 — Dashboard y Portal de Proveedores
+
+### 🎉 Added
+
+- **Portal de Proveedores** (`/supplier`):
+  - Login con CUIT, ID de proveedor o nombre
+  - Vista de facturas por proveedor
+  - Filtros por estado (Aprobadas, Pendientes, Rechazadas, Escaladas)
+  - Chat con el departamento de Cuentas a Pagar
+- **Dashboard del sistema** (`/dashboard`):
+  - Estadísticas en tiempo real (facturas en inbox, procesadas, rechazadas)
+  - Conteo de decisiones por tipo
+  - Total de montos aprobados
+  - Últimos pagos procesados
+- **Base de datos de facturas** (`suppliers.db`):
+  - Tabla `invoices` con datos de prueba para cada proveedor
+  - Historial de estados y confirmaciones
+
+### 🐛 Fixed
+
+- **Ruta de `payments_db`** en `settings.py`:
+  - Cambiada de `platform/data/payments.db` a `data/payments.db`
+- **Query SQL del dashboard**:
+  - Corregido `processed_at` → `registered_at` en la tabla payments
+- **Router del portal de proveedores**:
+  - Corregida conexión a `suppliers.db` en lugar de `payments.db`
+  - Corregido uso de `row[]` en lugar de `row.get()` para SQLite Row
+- **Ruteo del portal de proveedores**:
+  - Configurado StaticFiles con `html=True` para servir index.html automáticamente
+  - Rutas `/supplier`, `/supplier/` y `/supplier/portal` funcionan correctamente
+
+### 📊 Datos de prueba
+
+Proveedores disponibles en el portal:
+
+| ID | Nombre | CUIT | Estado |
+|---|---|---|---|
+| SUP001 | TechCorp SA | 30-71234567-0 | ACTIVO |
+| SUP002 | Papelería Norte SRL | 30-69874523-1 | ACTIVO |
+| SUP003 | Servicios Rápidos SA | 30-70111222-3 | INACTIVO |
+| SUP004 | Limpieza Total SRL | 30-70555666-7 | ACTIVO |
+| SUP005 | Consultoría Digital SA | 30-71234999-2 | ACTIVO |
+
+---
+
 ## [1.1.0] — 2026-06-28 — Fix de compatibilidad `chromadb` ↔ `google-genai`
 
 ### ⚠️ Changed (breaking changes técnicas, no de API)
@@ -130,13 +175,6 @@ este CHANGELOG:
 ---
 
 ## Roadmap (ideas para versiones futuras)
-
-### [1.2.0] — Planeado
-- Agregar `DatabaseSessionService` para que las sesiones sobrevivan
-  reinicios.
-- Exponer `supplier_lookup_tool` como MCP server real (no mock).
-- Agregar un agente de `fraud_detection` que use LLM as judge sobre
-  patrones de facturas.
 
 ### [1.3.0] — Planeado
 - Migrar ChromaDB a Qdrant para soportar multi-tenancy.
