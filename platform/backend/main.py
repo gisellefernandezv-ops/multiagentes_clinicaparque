@@ -119,6 +119,20 @@ if settings.frontend_dir.exists():
     def root():
         return FileResponse(str(settings.frontend_dir / "index.html"))
 
+# Supplier Portal estático
+SUPPLIER_PORTAL_DIR = PROJECT_ROOT / "supplier_portal"
+if SUPPLIER_PORTAL_DIR.exists():
+    app.mount(
+        "/supplier",
+        StaticFiles(directory=str(SUPPLIER_PORTAL_DIR), html=True),
+        name="supplier_static",
+    )
+    
+    @app.get("/supplier")
+    @app.get("/supplier/")
+    def supplier_portal_root():
+        return FileResponse(str(SUPPLIER_PORTAL_DIR / "index.html"))
+
 
 if __name__ == "__main__":
     import uvicorn

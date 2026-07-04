@@ -11,7 +11,8 @@ from fastapi.responses import FileResponse
 
 # Rutas
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DB_PATH = PROJECT_ROOT / "data" / "payments.db"
+PAYMENTS_DB = PROJECT_ROOT / "data" / "payments.db"
+SUPPLIERS_DB = PROJECT_ROOT / "platform" / "data" / "suppliers.db"
 SUPPLIER_PORTAL_DIR = PROJECT_ROOT / "supplier_portal"
 
 
@@ -36,7 +37,7 @@ def validate_supplier(identifier: dict = None):
     ident = identifier['identifier'].strip()
     
     try:
-        conn = sqlite3.connect(str(DB_PATH))
+        conn = sqlite3.connect(str(SUPPLIERS_DB))
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         
@@ -84,8 +85,8 @@ def validate_supplier(identifier: dict = None):
                     "name": row['name'],
                     "cuit": row['cuit'],
                     "status": row['status'],
-                    "email": row.get('email', ''),
-                    "phone": row.get('phone', '')
+                    "email": row['email'] if 'email' in dict(row).keys() else '',
+                    "phone": row['phone'] if 'phone' in dict(row).keys() else ''
                 }
             }
         else:
@@ -105,7 +106,7 @@ def validate_supplier(identifier: dict = None):
 def get_supplier_invoices(supplier_id: str):
     """Obtiene las facturas de un proveedor."""
     try:
-        conn = sqlite3.connect(str(DB_PATH))
+        conn = sqlite3.connect(str(SUPPLIERS_DB))
         conn.row_factory = sqlite3.Row
         cur = conn.cursor()
         
