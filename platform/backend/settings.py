@@ -40,7 +40,7 @@ class Settings(BaseSettings):
 
     @property
     def payments_db(self) -> Path:
-        return PROJECT_ROOT / "platform" / "data" / "payments.db"
+        return PROJECT_ROOT / "data" / "payments.db"
 
     @property
     def frontend_dir(self) -> Path:

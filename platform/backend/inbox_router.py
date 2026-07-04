@@ -216,7 +216,7 @@ def dashboard_stats():
             stats["recent"] = [
                 dict(r) for r in conn.execute(
                     "SELECT invoice_id, supplier_id, amount, decision, "
-                    "payment_status, processed_at FROM payments "
+                    "payment_status, registered_at FROM payments "
                     "ORDER BY id DESC LIMIT 10"
                 ).fetchall()
             ]
