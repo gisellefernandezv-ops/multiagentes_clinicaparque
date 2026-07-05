@@ -25,12 +25,12 @@ from fastapi.responses import FileResponse
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from settings import settings  # noqa: E402
-from watcher import InboxWatcher  # noqa: E402
-from inbox_router import router as inbox_router  # noqa: E402
-from chat_router import router as chat_router  # noqa: E402
-from new_invoices_router import router as new_invoices_router  # noqa: E402
-from supplier_portal_router import router as supplier_portal_router  # noqa: E402
+from .settings import settings
+from .watcher import InboxWatcher
+from .inbox_router import router as inbox_router
+from .chat_router import router as chat_router
+from .new_invoices_router import router as new_invoices_router
+from .supplier_portal_router import router as supplier_portal_router
 
 
 # Watcher global (lo iniciamos en lifespan)
@@ -137,7 +137,7 @@ if SUPPLIER_PORTAL_DIR.exists():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",
+        "platform.backend.main:app",
         host=settings.host,
         port=settings.port,
         log_level="info",

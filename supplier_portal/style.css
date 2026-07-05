@@ -1,4 +1,6 @@
-/* Portal de Proveedores - InvoiceFlow */
+/* Portal de Proveedores - InvoiceFlow
+   Diseño con Sidebar según especificación */
+
 * {
     box-sizing: border-box;
     margin: 0;
@@ -21,6 +23,11 @@
     --pending-bg: #fef9c3;
     --escalated: #ea580c;
     --escalated-bg: #fed7aa;
+    --paid: #0891b2;
+    --paid-bg: #cffafe;
+    --sidebar-width: 240px;
+    --header-height: 64px;
+    --footer-height: 48px;
     --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
 }
 
@@ -32,85 +39,45 @@ body {
     line-height: 1.5;
 }
 
-/* Header */
-header {
-    background: white;
-    border-bottom: 1px solid var(--border);
-    padding: 16px 24px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    box-shadow: var(--shadow);
-}
-
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.logo {
-    font-size: 36px;
-}
-
-.brand-text h1 {
-    font-size: 20px;
-    color: var(--primary);
-    margin: 0;
-}
-
-.brand-text .subtitle {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-.user-info {
-    text-align: right;
-}
-
-.supplier-name {
-    display: block;
-    font-weight: 600;
-    font-size: 14px;
-}
-
-.supplier-id {
-    font-size: 12px;
-    color: var(--text-light);
-}
-
-/* Main */
-main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 24px;
-}
-
-/* Login Section */
+/* ============================================================ */
+/* LOGIN SECTION                                               */
+/* ============================================================ */
 .login-section {
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: calc(100vh - 200px);
+    min-height: 100vh;
+    padding: 24px;
 }
 
 .login-card {
     background: white;
     border-radius: 16px;
-    padding: 40px;
+    padding: 48px;
     box-shadow: var(--shadow);
     width: 100%;
-    max-width: 450px;
+    max-width: 420px;
     text-align: center;
 }
 
-.login-card h2 {
-    font-size: 24px;
-    margin-bottom: 8px;
-    color: var(--text);
+.login-logo {
+    font-size: 64px;
+    margin-bottom: 16px;
 }
 
-.login-card > p {
+.login-title {
+    font-size: 28px;
+    color: var(--primary);
+    margin-bottom: 4px;
+}
+
+.login-subtitle {
+    font-size: 14px;
+    color: var(--text-light);
+    margin-bottom: 24px;
+}
+
+.login-desc {
     color: var(--text-light);
     margin-bottom: 24px;
 }
@@ -157,7 +124,382 @@ main {
     display: inline-block;
 }
 
-/* Buttons */
+/* ============================================================ */
+/* APP CONTAINER (después de login)                            */
+/* ============================================================ */
+.app-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ============================================================ */
+/* HEADER GLOBAL                                               */
+/* ============================================================ */
+.app-header {
+    height: var(--header-height);
+    background: var(--card-bg);
+    border-bottom: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+}
+
+.header-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.header-logo {
+    font-size: 28px;
+}
+
+.header-title h1 {
+    font-size: 18px;
+    color: var(--text);
+    font-weight: 600;
+}
+
+.header-user {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.user-info-box {
+    text-align: right;
+}
+
+.user-name {
+    display: block;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.user-id {
+    font-size: 12px;
+    color: var(--text-light);
+}
+
+.btn-logout {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-logout:hover {
+    background: var(--rejected-bg);
+    border-color: var(--rejected);
+    color: var(--rejected);
+}
+
+/* ============================================================ */
+/* APP BODY (sidebar + content)                                */
+/* ============================================================ */
+.app-body {
+    display: flex;
+    margin-top: var(--header-height);
+    min-height: calc(100vh - var(--header-height) - var(--footer-height));
+}
+
+/* ============================================================ */
+/* SIDEBAR                                                     */
+/* ============================================================ */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--card-bg);
+    border-right: 1px solid var(--border);
+    position: fixed;
+    top: var(--header-height);
+    left: 0;
+    bottom: var(--footer-height);
+    overflow-y: auto;
+    padding: 16px 0;
+}
+
+.sidebar-nav {
+    list-style: none;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    padding: 12px 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-left: 3px solid transparent;
+}
+
+.sidebar-item:hover {
+    background: var(--bg);
+}
+
+.sidebar-item.active {
+    background: var(--bg);
+    border-left-color: var(--primary);
+}
+
+.sidebar-item.active .sidebar-text {
+    color: var(--primary);
+    font-weight: 600;
+}
+
+.sidebar-icon {
+    font-size: 20px;
+    margin-right: 12px;
+    width: 28px;
+    text-align: center;
+}
+
+.sidebar-text {
+    font-size: 14px;
+    color: var(--text);
+}
+
+/* ============================================================ */
+/* MAIN CONTENT                                                */
+/* ============================================================ */
+.main-content {
+    flex: 1;
+    margin-left: var(--sidebar-width);
+    padding: 24px;
+    max-width: calc(100% - var(--sidebar-width));
+}
+
+.page {
+    display: none;
+    animation: fadeIn 0.3s;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.page-title {
+    font-size: 24px;
+    margin-bottom: 24px;
+    color: var(--text);
+}
+
+/* ============================================================ */
+/* STATS GRID (5 badges de estado)                            */
+/* ============================================================ */
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 16px;
+    margin-bottom: 32px;
+}
+
+@media (max-width: 1024px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 640px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.stat-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+}
+
+.stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.stat-value.approved { color: var(--approved); }
+.stat-value.pending { color: var(--pending); }
+.stat-value.rejected { color: var(--rejected); }
+.stat-value.escalated { color: var(--escalated); }
+.stat-value.paid { color: var(--paid); }
+
+/* ============================================================ */
+/* QUICK ACTIONS                                               */
+/* ============================================================ */
+.quick-actions {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.quick-actions h3 {
+    font-size: 16px;
+    margin-bottom: 16px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+.btn-action {
+    background: var(--primary);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.btn-action:hover {
+    background: var(--primary-dark);
+}
+
+.btn-action.secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+}
+
+.btn-action.secondary:hover {
+    background: white;
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+/* ============================================================ */
+/* UPLOAD AREA                                                */
+/* ============================================================ */
+.upload-container {
+    max-width: 600px;
+}
+
+.upload-area {
+    background: var(--card-bg);
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.upload-area:hover, .upload-area.dragover {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.upload-icon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.upload-text {
+    font-size: 16px;
+    margin-bottom: 8px;
+}
+
+.upload-hint {
+    font-size: 13px;
+    color: var(--text-light);
+}
+
+.upload-result {
+    margin-top: 24px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.upload-processing {
+    text-align: center;
+    padding: 24px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.upload-success {
+    text-align: center;
+}
+
+.upload-success h4 {
+    color: var(--approved);
+    margin-bottom: 8px;
+}
+
+.upload-success .btn-primary {
+    margin-top: 16px;
+}
+
+/* ============================================================ */
+/* FILTERS                                                     */
+/* ============================================================ */
+.filter-bar {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.filter-select {
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 13px;
+    background: var(--card-bg);
+    min-width: 150px;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+/* ============================================================ */
+/* BUTTONS                                                     */
+/* ============================================================ */
 .btn-primary {
     background: var(--primary);
     color: white;
@@ -168,11 +510,27 @@ main {
     font-weight: 600;
     cursor: pointer;
     transition: background 0.15s;
-    width: 100%;
 }
 
 .btn-primary:hover {
     background: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.15s;
+}
+
+.btn-secondary:hover {
+    background: white;
+    border-color: var(--primary);
+    color: var(--primary);
 }
 
 .btn-small {
@@ -191,136 +549,11 @@ main {
     color: white;
 }
 
-/* Dashboard */
-.dashboard-section {
-    animation: fadeIn 0.3s;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* Tabs */
-.tabs {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-}
-
-.tab {
-    background: none;
-    border: none;
-    padding: 10px 20px;
-    font-size: 14px;
-    font-weight: 500;
-    color: var(--text-light);
-    cursor: pointer;
-    border-radius: 8px 8px 0 0;
-    transition: all 0.15s;
-}
-
-.tab:hover {
-    color: var(--text);
-    background: var(--bg);
-}
-
-.tab.active {
-    color: var(--primary);
-    background: white;
-    border-bottom: 2px solid var(--primary);
-}
-
-.tab-content {
-    display: none;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-/* Stats Grid */
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 16px;
-    margin-bottom: 24px;
-}
-
-@media (max-width: 768px) {
-    .stats-grid {
-        grid-template-columns: repeat(2, 1fr);
-    }
-}
-
-.stat-card {
-    background: white;
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: var(--shadow);
-    text-align: center;
-}
-
-.stat-label {
-    font-size: 12px;
-    color: var(--text-light);
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 8px;
-}
-
-.stat-value {
-    font-size: 32px;
-    font-weight: 700;
-    color: var(--text);
-}
-
-.stat-card.approved .stat-value {
-    color: var(--approved);
-}
-
-.stat-card.pending .stat-value {
-    color: var(--pending);
-}
-
-.stat-card.rejected .stat-value {
-    color: var(--rejected);
-}
-
-/* Filter Bar */
-.filter-bar {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
-}
-
-.filter-btn {
-    background: var(--bg);
-    border: 1px solid var(--border);
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.15s;
-}
-
-.filter-btn:hover {
-    background: white;
-    border-color: var(--primary);
-}
-
-.filter-btn.active {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-}
-
-/* Invoices Table */
+/* ============================================================ */
+/* INVOICES TABLE                                              */
+/* ============================================================ */
 .invoices-table-container {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     box-shadow: var(--shadow);
     overflow: hidden;
@@ -374,7 +607,9 @@ main {
     color: var(--text-light);
 }
 
-/* Badges */
+/* ============================================================ */
+/* BADGES                                                      */
+/* ============================================================ */
 .badge {
     display: inline-block;
     padding: 4px 10px;
@@ -384,7 +619,7 @@ main {
     text-transform: uppercase;
 }
 
-.badge.approved {
+.badge.approved, .badge.paid {
     background: var(--approved-bg);
     color: var(--approved);
 }
@@ -394,39 +629,27 @@ main {
     color: var(--rejected);
 }
 
-.badge.pending {
+.badge.pending, .badge.pending_payment, .badge.pendiente_tecnico {
     background: var(--pending-bg);
     color: var(--pending);
 }
 
-.badge.escalated {
+.badge.escalated, .badge.pending_human_review {
     background: var(--escalated-bg);
     color: var(--escalated);
 }
 
-/* Chat */
+/* ============================================================ */
+/* CHAT                                                        */
+/* ============================================================ */
 .chat-container {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     box-shadow: var(--shadow);
     display: flex;
     flex-direction: column;
-    height: 500px;
-}
-
-.chat-header {
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border);
-}
-
-.chat-header h3 {
-    font-size: 16px;
-    margin-bottom: 4px;
-}
-
-.chat-hint {
-    font-size: 12px;
-    color: var(--text-light);
+    height: calc(100vh - 200px);
+    max-height: 600px;
 }
 
 .chat-messages {
@@ -514,7 +737,32 @@ main {
     width: auto;
 }
 
-/* Modal */
+/* Chat flotante */
+.chat-fab {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: var(--primary);
+    color: white;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+    transition: all 0.15s;
+    z-index: 90;
+}
+
+.chat-fab:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+}
+
+/* ============================================================ */
+/* MODAL                                                       */
+/* ============================================================ */
 .modal-overlay {
     position: fixed;
     top: 0;
@@ -533,7 +781,7 @@ main {
 }
 
 .modal {
-    background: white;
+    background: var(--card-bg);
     border-radius: 16px;
     width: 90%;
     max-width: 500px;
@@ -572,7 +820,9 @@ main {
     overflow-y: auto;
 }
 
-/* Invoice Detail */
+/* ============================================================ */
+/* INVOICE DETAIL                                              */
+/* ============================================================ */
 .invoice-detail {
     animation: fadeIn 0.2s;
 }
@@ -623,62 +873,63 @@ main {
     font-family: monospace;
 }
 
-.rejection-info,
-.success-info,
-.pending-info,
-.escalated-info {
+.invoice-alert {
     padding: 16px;
     border-radius: 8px;
     margin-top: 16px;
 }
 
-.rejection-info {
+.invoice-alert h5 {
+    margin-bottom: 8px;
+}
+
+.invoice-alert.rejection {
     background: var(--rejected-bg);
-}
-
-.rejection-info h5 {
     color: var(--rejected);
-    margin-bottom: 8px;
 }
 
-.success-info {
+.invoice-alert.success {
     background: var(--approved-bg);
-}
-
-.success-info h5 {
     color: var(--approved);
-    margin-bottom: 8px;
 }
 
-.pending-info {
-    background: var(--pending-bg);
-}
-
-.pending-info h5 {
-    color: var(--pending);
-    margin-bottom: 8px;
-}
-
-.escalated-info {
+.invoice-alert.warning {
     background: var(--escalated-bg);
-}
-
-.escalated-info h5 {
     color: var(--escalated);
-    margin-bottom: 8px;
 }
 
-.hint {
+/* ============================================================ */
+/* FOOTER GLOBAL                                               */
+/* ============================================================ */
+.app-footer {
+    height: var(--footer-height);
+    background: var(--card-bg);
+    border-top: 1px solid var(--border);
+    padding: 0 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
     font-size: 12px;
     color: var(--text-light);
-    margin-top: 8px;
 }
 
-/* Toast */
+.footer-contact {
+    display: flex;
+    gap: 24px;
+}
+
+/* ============================================================ */
+/* TOAST                                                       */
+/* ============================================================ */
 #toast-container {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
+    bottom: 24px;
+    right: 24px;
     z-index: 2000;
 }
 
@@ -707,7 +958,9 @@ main {
     }
 }
 
-/* Utility */
+/* ============================================================ */
+/* UTILITY                                                     */
+/* ============================================================ */
 .hidden {
     display: none !important;
 }

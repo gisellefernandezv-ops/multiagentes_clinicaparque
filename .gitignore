@@ -1,31 +1,101 @@
-# ===========================================
-# Entorno
-# ===========================================
-.env
+# ============================================
+# InvoiceFlow — .gitignore
+# ============================================
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+*.egg
+
+# Entorno virtual
 .venv/
 venv/
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
+ENV/
+env/
+.env
 
-# ===========================================
-# Datos locales (DB y Chroma persistido)
-# ===========================================
-data/payments.db
-data/chroma_db/
+# Base de datos (datos sensibles)
+*.db
+*.sqlite
+*.sqlite3
+data/*.db
+platform/data/*.db
+platform/data/inbox/*
+!platform/data/inbox/.gitkeep
+platform/data/processed/*
+!platform/data/processed/.gitkeep
+platform/data/rejected/*
+!platform/data/rejected/.gitkeep
 
-# ===========================================
-# Logs y temporales
-# ===========================================
+# ChromaDB (vectores grandes)
+chroma_db/
+platform/data/chroma_db/
+*/chroma_db/
+
+# Logs
 *.log
-.pytest_cache/
-.mypy_cache/
-.ruff_cache/
+logs/
 
-# ===========================================
-# IDE
-# ===========================================
-.vscode/
-.idea/
+# OS
 .DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# IDE
+.idea/
+.vscode/
+*.sublime-*
+
+# Scripts de deployment local (no subir)
+*.bak
+*.tmp
+*.temp
+*_local.bat
+*_setup.bat
+INICIAR*.bat
+SUBIR*.bat
+GIT*.bat
+LAUNCH*.bat
+stop_all.bat
+start_all.bat
+setup.bat
+run_setup.bat
+smoke_test.bat
+start.bat
+push_to_github.bat
+
+# Credenciales y config local
+credentials.json
+secrets.json
+*.pem
+*.key
+service_account.json
+
+# Node (si se usa)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentación generada
+site/
+
+# Archivos grandes
+*.zip
+*.tar.gz
+*.rar
+files.zip

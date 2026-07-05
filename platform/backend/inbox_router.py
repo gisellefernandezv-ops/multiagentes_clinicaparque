@@ -10,9 +10,9 @@ from typing import List, Optional
 from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 
-from settings import settings
-from orchestrator import process_invoice
-from watcher import parse_invoice_file, move_file
+from .settings import settings
+from .orchestrator import process_invoice
+from .watcher import parse_invoice_file, move_file
 
 
 router = APIRouter(tags=["inbox"])

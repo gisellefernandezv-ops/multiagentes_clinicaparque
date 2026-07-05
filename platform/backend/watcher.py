@@ -15,7 +15,7 @@ from typing import Callable, Optional
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
-from settings import settings
+from .settings import settings
 
 
 class InboxEventHandler(FileSystemEventHandler):

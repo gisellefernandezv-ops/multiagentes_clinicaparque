@@ -3,139 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal de Proveedores - InvoiceFlow</title>
+    <title>InvoiceFlow — Portal Proveedor</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <header>
-        <div class="brand">
-            <span class="logo">🏢</span>
-            <div class="brand-text">
-                <h1>Portal de Proveedores</h1>
-                <span class="subtitle">InvoiceFlow - Seguimiento de facturas</span>
+    <!-- ============================================================ -->
+    <!-- LOGIN SECTION (antes de autenticarse)                        -->
+    <!-- ============================================================ -->
+    <section class="login-section" id="login-section">
+        <div class="login-card">
+            <div class="login-logo">🏢</div>
+            <h1 class="login-title">InvoiceFlow</h1>
+            <p class="login-subtitle">Portal del Proveedor</p>
+            <p class="login-desc">Ingresá tu identificador para acceder a tu cuenta</p>
+            
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="login-input">CUIT / Nombre / ID de Proveedor</label>
+                    <input type="text" id="login-input" placeholder="Ej: 30-71234567-0" required>
+                </div>
+                <button type="submit" class="btn-primary">Ingresar</button>
+            </form>
+            
+            <div class="login-hint">
+                <p>Proveedores de prueba:</p>
+                <code>SUP001</code> <code>SUP002</code> <code>SUP003</code> <code>SUP004</code> <code>SUP005</code>
             </div>
         </div>
-        <div class="user-info" id="user-info">
-            <span class="supplier-name" id="supplier-name">No identificado</span>
-            <span class="supplier-id" id="supplier-id"></span>
-        </div>
-    </header>
+    </section>
 
-    <main>
-        <!-- Login Section -->
-        <section class="login-section" id="login-section">
-            <div class="login-card">
-                <h2>Bienvenido al Portal de Proveedores</h2>
-                <p>Ingresá tu identificador para acceder a tu cuenta</p>
-                
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="login-input">CUIT / Nombre / ID de Proveedor</label>
-                        <input type="text" id="login-input" placeholder="Ej: 30-71234567-0" required>
-                    </div>
-                    <button type="submit" class="btn-primary">Ingresar</button>
-                </form>
-                
-                <div class="login-hint">
-                    <p>Proveedores de prueba:</p>
-                    <code>SUP001</code> <code>SUP002</code> <code>SUP003</code> <code>SUP004</code> <code>SUP005</code>
+    <!-- ============================================================ -->
+    <!-- APP SECTION (después de autenticarse)                        -->
+    <!-- ============================================================ -->
+    <div class="app-container hidden" id="app-container">
+        
+        <!-- Header global -->
+        <header class="app-header">
+            <div class="header-brand">
+                <span class="header-logo">🏢</span>
+                <div class="header-title">
+                    <h1>InvoiceFlow — Portal Proveedor</h1>
                 </div>
             </div>
-        </section>
+            <div class="header-user">
+                <div class="user-info-box">
+                    <span class="user-name" id="header-supplier-name">-</span>
+                    <span class="user-id" id="header-supplier-cuit">-</span>
+                </div>
+                <button class="btn-logout" id="btn-logout" title="Cerrar sesión">
+                    🚪 Cerrar sesión
+                </button>
+            </div>
+        </header>
 
-        <!-- Dashboard Section -->
-        <section class="dashboard-section hidden" id="dashboard-section">
-            <!-- Tabs -->
-            <nav class="tabs">
-                <button class="tab active" data-tab="invoices">
-                    📋 Mis Facturas
-                </button>
-                <button class="tab" data-tab="chat">
-                    💬 Chat con Empresa
-                </button>
+        <div class="app-body">
+            <!-- Sidebar de navegación -->
+            <nav class="sidebar" id="sidebar">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item active" data-page="inicio">
+                        <span class="sidebar-icon">🏠</span>
+                        <span class="sidebar-text">Inicio</span>
+                    </li>
+                    <li class="sidebar-item" data-page="subir-factura">
+                        <span class="sidebar-icon">📤</span>
+                        <span class="sidebar-text">Subir factura</span>
+                    </li>
+                    <li class="sidebar-item" data-page="mis-facturas">
+                        <span class="sidebar-icon">📋</span>
+                        <span class="sidebar-text">Mis facturas</span>
+                    </li>
+                    <li class="sidebar-item" data-page="chat">
+                        <span class="sidebar-icon">💬</span>
+                        <span class="sidebar-text">Chat de soporte</span>
+                    </li>
+                </ul>
             </nav>
 
-            <!-- Tab: Mis Facturas -->
-            <div class="tab-content active" id="tab-invoices">
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-label">Total Facturas</div>
-                        <div class="stat-value" id="stat-total">0</div>
-                    </div>
-                    <div class="stat-card approved">
-                        <div class="stat-label">Aprobadas</div>
-                        <div class="stat-value" id="stat-approved">0</div>
-                    </div>
-                    <div class="stat-card pending">
-                        <div class="stat-label">Pendientes</div>
-                        <div class="stat-value" id="stat-pending">0</div>
-                    </div>
-                    <div class="stat-card rejected">
-                        <div class="stat-label">Rechazadas</div>
-                        <div class="stat-value" id="stat-rejected">0</div>
-                    </div>
-                </div>
-
-                <div class="filter-bar">
-                    <button class="filter-btn active" data-filter="all">Todas</button>
-                    <button class="filter-btn" data-filter="APPROVED">Aprobadas</button>
-                    <button class="filter-btn" data-filter="PENDING">Pendientes</button>
-                    <button class="filter-btn" data-filter="REJECTED">Rechazadas</button>
-                    <button class="filter-btn" data-filter="ESCALATED">Escaladas</button>
-                </div>
-
-                <div class="invoices-table-container">
-                    <table class="invoices-table" id="invoices-table">
-                        <thead>
-                            <tr>
-                                <th>Nro. Factura</th>
-                                <th>Fecha</th>
-                                <th>Monto</th>
-                                <th>Estado</th>
-                                <th>Confirmación</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody id="invoices-tbody">
-                            <tr>
-                                <td colspan="6" class="loading">Cargando facturas...</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            <!-- Tab: Chat -->
-            <div class="tab-content" id="tab-chat">
-                <div class="chat-container">
-                    <div class="chat-header">
-                        <h3>💬 Chat con el Departamento de Cuentas a Pagar</h3>
-                        <p class="chat-hint">Realizá consultas sobre tus facturas y pagos</p>
-                    </div>
+            <!-- Contenido principal -->
+            <main class="main-content">
+                
+                <!-- ============================================================ -->
+                <!-- PÁGINA: INICIO (Dashboard)                                   -->
+                <!-- ============================================================ -->
+                <div class="page active" id="page-inicio">
+                    <h2 class="page-title">Bienvenido</h2>
                     
-                    <div class="chat-messages" id="chat-messages">
-                        <div class="chat-welcome">
-                            <p>👋 ¡Bienvenido al chat de soporte!</p>
-                            <p>Podés consultar el estado de tus facturas, tiempos de pago, o cualquier duda que tengas.</p>
-                            <p class="examples">Ejemplos de consultas:</p>
-                            <ul>
-                                <li>"¿Cuál es el estado de mi factura FC-2026-SUP001-001?"</li>
-                                <li>"¿Cuándo voy a cobrar?"</li>
-                                <li>"Tengo una consulta sobre la factura rechazada"</li>
-                            </ul>
+                    <!-- Resumen de facturas por estado (5 badges) -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Pendiente</div>
+                            <div class="stat-value pending" id="stat-pending">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Aprobada</div>
+                            <div class="stat-value approved" id="stat-approved">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Escalada</div>
+                            <div class="stat-value escalated" id="stat-escalated">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Rechazada</div>
+                            <div class="stat-value rejected" id="stat-rejected">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Pagada</div>
+                            <div class="stat-value paid" id="stat-paid">0</div>
                         </div>
                     </div>
-                    
-                    <div class="chat-input-container">
-                        <input type="text" id="chat-input" placeholder="Escribí tu consulta...">
-                        <button id="chat-send" class="btn-primary">Enviar</button>
+
+                    <!-- Accesos rápidos -->
+                    <div class="quick-actions">
+                        <h3>Accesos rápidos</h3>
+                        <div class="action-buttons">
+                            <button class="btn-action" id="btn-quick-upload">
+                                📤 Subir factura
+                            </button>
+                            <button class="btn-action secondary" id="btn-quick-consult">
+                                🔍 Consultar estado
+                            </button>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
-    </main>
 
-    <!-- Modal de detalle de factura -->
+                <!-- ============================================================ -->
+                <!-- PÁGINA: SUBIR FACTURA                                       -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-subir-factura">
+                    <h2 class="page-title">Subir factura</h2>
+                    
+                    <div class="upload-container">
+                        <div class="upload-area" id="upload-area">
+                            <div class="upload-icon">📄</div>
+                            <p class="upload-text">Arrastrá tu factura PDF acá</p>
+                            <p class="upload-hint">o hacé click para seleccionar archivo</p>
+                            <input type="file" id="file-input" accept=".pdf" hidden>
+                        </div>
+
+                        <div class="upload-result hidden" id="upload-result">
+                            <!-- Resultado del procesamiento -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- PÁGINA: MIS FACTURAS (Historial)                            -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-mis-facturas">
+                    <h2 class="page-title">Mis facturas</h2>
+                    
+                    <!-- Filtros -->
+                    <div class="filter-bar">
+                        <select id="filter-year" class="filter-select">
+                            <option value="">Todos los años</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                        </select>
+                        <select id="filter-month" class="filter-select">
+                            <option value="">Todos los meses</option>
+                            <option value="01">Enero</option>
+                            <option value="02">Febrero</option>
+                            <option value="03">Marzo</option>
+                            <option value="04">Abril</option>
+                            <option value="05">Mayo</option>
+                            <option value="06">Junio</option>
+                            <option value="07">Julio</option>
+                            <option value="08">Agosto</option>
+                            <option value="09">Septiembre</option>
+                            <option value="10">Octubre</option>
+                            <option value="11">Noviembre</option>
+                            <option value="12">Diciembre</option>
+                        </select>
+                        <select id="filter-status" class="filter-select">
+                            <option value="">Todos los estados</option>
+                            <option value="PENDING">Pendiente</option>
+                            <option value="APPROVED">Aprobada</option>
+                            <option value="ESCALATED">Escalada</option>
+                            <option value="REJECTED">Rechazada</option>
+                            <option value="PAID">Pagada</option>
+                        </select>
+                        <button class="btn-secondary" id="btn-apply-filters">Aplicar</button>
+                    </div>
+
+                    <!-- Tabla de facturas -->
+                    <div class="invoices-table-container">
+                        <table class="invoices-table" id="invoices-table">
+                            <thead>
+                                <tr>
+                                    <th>Nro. Factura</th>
+                                    <th>Fecha</th>
+                                    <th>Monto</th>
+                                    <th>Estado</th>
+                                    <th>Confirmación</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="invoices-tbody">
+                                <tr>
+                                    <td colspan="6" class="loading">Cargando facturas...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- PÁGINA: CHAT DE SOPORTE                                    -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-chat">
+                    <h2 class="page-title">Chat de soporte</h2>
+                    
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="chat-welcome">
+                                <p>👋 ¡Bienvenido al chat de soporte!</p>
+                                <p>Podés consultar el estado de tus facturas, tiempos de pago, o cualquier duda que tengas.</p>
+                                <p class="examples">Ejemplos de consultas:</p>
+                                <ul>
+                                    <li>"¿Cuál es el estado de mi factura FC-2026-SUP001-001?"</li>
+                                    <li>"¿Cuándo voy a cobrar?"</li>
+                                    <li>"Tengo una consulta sobre la factura rechazada"</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Escribí tu consulta...">
+                            <button id="chat-send" class="btn-primary">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Footer global -->
+        <footer class="app-footer">
+            <div class="footer-contact">
+                <span>📧 cuentasapagar@invoiceflow.com</span>
+                <span>📞 +54 11 4567-8900</span>
+            </div>
+            <div class="footer-version">
+                <span>InvoiceFlow v1.0.0</span>
+            </div>
+        </footer>
+    </div>
+
+    <!-- ============================================================ -->
+    <!-- MODAL DE DETALLE DE FACTURA                                 -->
+    <!-- ============================================================ -->
     <div class="modal-overlay hidden" id="invoice-modal">
         <div class="modal">
             <div class="modal-header">
@@ -151,18 +267,15 @@
     <!-- Toast notifications -->
     <div id="toast-container"></div>
 
+    <!-- Chat flotante (accesible desde cualquier página) -->
+    <button class="chat-fab hidden" id="chat-fab" title="Chat de soporte">💬</button>
+
     <script>
         // ============================================================
         // Estado global
         // ============================================================
         let currentSupplier = null;
-        let currentFilter = 'all';
-        let chatHistory = [];
-
-        // ============================================================
-        // API Base
-        // ============================================================
-        const API = '';
+        let allInvoices = [];
 
         // ============================================================
         // Utilidades
@@ -191,16 +304,15 @@
 
         function getStatusLabel(status) {
             const labels = {
-                'APPROVED': 'Aprobada',
                 'PENDING': 'Pendiente',
+                'PENDING_PAYMENT': 'En espera de pago',
+                'APPROVED': 'Aprobada',
                 'REJECTED': 'Rechazada',
-                'ESCALATED': 'Escalada'
+                'ESCALATED': 'Escalada',
+                'PAID': 'Pagada',
+                'PENDIENTE_TECNICO': 'Procesando'
             };
             return labels[status] || status;
-        }
-
-        function getStatusClass(status) {
-            return status ? status.toLowerCase() : '';
         }
 
         // ============================================================
@@ -216,30 +328,27 @@
             }
 
             try {
-                const response = await fetch(`${API}/supplier/validate`, {
+                const response = await fetch(`/supplier/validate`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ identifier: input })
                 });
-                
                 const data = await response.json();
                 
                 if (data.valid) {
                     currentSupplier = data.supplier;
-                    showSupplierDashboard();
+                    showApp();
                 } else {
                     showToast(data.message || 'Proveedor no encontrado', 'error');
                 }
             } catch (err) {
-                // Si no hay backend, usar datos mock
                 mockLogin(input);
             }
         });
 
         function mockLogin(input) {
-            // Datos mock para demo
             const mockSuppliers = {
-                'SUP001': { id: 'SUP001', name: 'TechCorp SA', cuit: '30-71234567-0', status: 'ACTIVE' },
+                'SUP001': { id: 'SUP001', name: 'TechCorp SA', cuit: '30-71234567-8', status: 'ACTIVE' },
                 'SUP002': { id: 'SUP002', name: 'Papeleria Norte SRL', cuit: '30-69874523-1', status: 'ACTIVE' },
                 'SUP003': { id: 'SUP003', name: 'Servicios Rapidos SA', cuit: '30-70111222-3', status: 'ACTIVE' },
                 'SUP004': { id: 'SUP004', name: 'Limpieza Total SRL', cuit: '30-70555666-7', status: 'ACTIVE' },
@@ -249,7 +358,6 @@
             const upperInput = input.toUpperCase();
             let supplier = mockSuppliers[upperInput];
 
-            // Buscar por nombre parcial
             if (!supplier) {
                 const entries = Object.values(mockSuppliers);
                 supplier = entries.find(s => 
@@ -260,54 +368,68 @@
 
             if (supplier) {
                 currentSupplier = supplier;
-                showSupplierDashboard();
+                showApp();
             } else {
                 showToast('Proveedor no encontrado', 'error');
             }
         }
 
-        function showSupplierDashboard() {
+        function showApp() {
             document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
-            document.getElementById('supplier-name').textContent = currentSupplier.name;
-            document.getElementById('supplier-id').textContent = `CUIT: ${currentSupplier.cuit}`;
+            document.getElementById('app-container').classList.remove('hidden');
             
-            loadSupplierInvoices();
+            document.getElementById('header-supplier-name').textContent = currentSupplier.name;
+            document.getElementById('header-supplier-cuit').textContent = `CUIT: ${currentSupplier.cuit}`;
+            
+            loadInvoices();
+            updateStats();
         }
 
         // ============================================================
-        // Tabs
+        // Logout
         // ============================================================
-        document.querySelectorAll('.tabs .tab').forEach(tab => {
-            tab.addEventListener('click', () => {
-                document.querySelectorAll('.tabs .tab').forEach(t => t.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                tab.classList.add('active');
-                document.getElementById(`tab-${tab.dataset.tab}`).classList.add('active');
-            });
+        document.getElementById('btn-logout').addEventListener('click', () => {
+            currentSupplier = null;
+            document.getElementById('app-container').classList.add('hidden');
+            document.getElementById('login-section').classList.remove('hidden');
+            document.getElementById('login-input').value = '';
         });
 
         // ============================================================
-        // Filtros
+        // Navegación Sidebar
         // ============================================================
-        document.querySelectorAll('.filter-btn').forEach(btn => {
-            btn.addEventListener('click', () => {
-                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                currentFilter = btn.dataset.filter;
-                renderInvoices();
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', () => {
+                const page = item.dataset.page;
+                
+                document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                item.classList.add('active');
+                
+                document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+                document.getElementById(`page-${page}`).classList.add('active');
             });
         });
 
-        // ============================================================
-        // Cargar facturas del proveedor
-        // ============================================================
-        let allInvoices = [];
+        // Chat flotante
+        document.getElementById('chat-fab').addEventListener('click', () => {
+            document.querySelector('.sidebar-item[data-page="chat"]').click();
+        });
 
-        async function loadSupplierInvoices() {
-            const tbody = document.getElementById('invoices-tbody');
-            
-            // Datos mock para demo
+        // ============================================================
+        // Accesos rápidos
+        // ============================================================
+        document.getElementById('btn-quick-upload').addEventListener('click', () => {
+            document.querySelector('.sidebar-item[data-page="subir-factura"]').click();
+        });
+
+        document.getElementById('btn-quick-consult').addEventListener('click', () => {
+            document.querySelector('.sidebar-item[data-page="mis-facturas"]').click();
+        });
+
+        // ============================================================
+        // Cargar facturas
+        // ============================================================
+        function loadInvoices() {
             const mockInvoices = [
                 { invoice_id: 'FC-2026-SUP001-001', amount: 25000, state: 'APPROVED', invoice_date: '2026-06-01', confirmation_id: 'PAY-A1B2C3D4', rejection_reason: '' },
                 { invoice_id: 'FC-2026-SUP001-002', amount: 75000, state: 'REJECTED', invoice_date: '2026-06-15', confirmation_id: '', rejection_reason: 'Excede limite contractual maximo' },
@@ -316,64 +438,64 @@
                 { invoice_id: 'FC-2025-SUP001-006', amount: 32000, state: 'ESCALATED', invoice_date: '2025-11-20', confirmation_id: '', rejection_reason: 'Requiere revision humana por monto elevado' },
             ].filter(inv => inv.invoice_id.includes(currentSupplier.id));
 
-            // Agregar más facturas mock si no hay del proveedor
             if (mockInvoices.length === 0) {
-                const baseInvoices = [
-                    { invoice_id: `FC-2026-${currentSupplier.id}-001`, amount: 25000 + Math.random() * 50000, state: 'APPROVED', invoice_date: '2026-06-01', confirmation_id: 'PAY-' + Math.random().toString(36).substr(2, 8).toUpperCase(), rejection_reason: '' },
+                allInvoices = [
+                    { invoice_id: `FC-2026-${currentSupplier.id}-001`, amount: 25000, state: 'APPROVED', invoice_date: '2026-06-01', confirmation_id: 'PAY-12345678', rejection_reason: '' },
                     { invoice_id: `FC-2026-${currentSupplier.id}-002`, amount: 75000, state: 'REJECTED', invoice_date: '2026-05-15', confirmation_id: '', rejection_reason: 'Documentacion incompleta' },
                     { invoice_id: `FC-2026-${currentSupplier.id}-003`, amount: 150000, state: 'PENDING', invoice_date: '2026-06-28', confirmation_id: '', rejection_reason: '' },
                 ];
-                allInvoices = baseInvoices;
             } else {
                 allInvoices = mockInvoices;
             }
 
-            updateStats();
             renderInvoices();
         }
 
         function updateStats() {
-            const total = allInvoices.length;
-            const approved = allInvoices.filter(i => i.state === 'APPROVED').length;
-            const pending = allInvoices.filter(i => i.state === 'PENDING').length;
-            const rejected = allInvoices.filter(i => i.state === 'REJECTED' || i.state === 'ESCALATED').length;
-
-            document.getElementById('stat-total').textContent = total;
-            document.getElementById('stat-approved').textContent = approved;
-            document.getElementById('stat-pending').textContent = pending;
-            document.getElementById('stat-rejected').textContent = rejected;
+            document.getElementById('stat-pending').textContent = allInvoices.filter(i => i.state === 'PENDING').length;
+            document.getElementById('stat-approved').textContent = allInvoices.filter(i => i.state === 'APPROVED').length;
+            document.getElementById('stat-escalated').textContent = allInvoices.filter(i => i.state === 'ESCALATED').length;
+            document.getElementById('stat-rejected').textContent = allInvoices.filter(i => i.state === 'REJECTED').length;
+            document.getElementById('stat-paid').textContent = allInvoices.filter(i => i.state === 'PAID').length;
         }
 
         function renderInvoices() {
             const tbody = document.getElementById('invoices-tbody');
-            const filtered = currentFilter === 'all' 
-                ? allInvoices 
-                : allInvoices.filter(i => i.state === currentFilter);
+            
+            const yearFilter = document.getElementById('filter-year').value;
+            const monthFilter = document.getElementById('filter-month').value;
+            const statusFilter = document.getElementById('filter-status').value;
+
+            let filtered = [...allInvoices];
+            
+            if (yearFilter) {
+                filtered = filtered.filter(i => i.invoice_date.startsWith(yearFilter));
+            }
+            if (monthFilter) {
+                filtered = filtered.filter(i => i.invoice_date.includes(`-${monthFilter}-`));
+            }
+            if (statusFilter) {
+                filtered = filtered.filter(i => i.state === statusFilter);
+            }
 
             if (filtered.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6" class="empty-state">
-                            <p>📭 No hay facturas con el filtro seleccionado</p>
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = `<tr><td colspan="6" class="empty-state">📭 No hay facturas con los filtros seleccionados</td></tr>`;
                 return;
             }
 
             tbody.innerHTML = filtered.map(inv => `
-                <tr>
+                <tr class="invoice-row" data-id="${inv.invoice_id}">
                     <td><strong>${inv.invoice_id}</strong></td>
                     <td>${formatDate(inv.invoice_date)}</td>
                     <td class="amount">${formatCurrency(inv.amount)}</td>
-                    <td><span class="badge ${getStatusClass(inv.state)}">${getStatusLabel(inv.state)}</span></td>
+                    <td><span class="badge ${inv.state.toLowerCase()}">${getStatusLabel(inv.state)}</span></td>
                     <td class="confirmation">${inv.confirmation_id || '-'}</td>
-                    <td>
-                        <button class="btn-small" onclick="showInvoiceDetail('${inv.invoice_id}')">Ver detalle</button>
-                    </td>
+                    <td><button class="btn-small" onclick="showInvoiceDetail('${inv.invoice_id}')">Ver</button></td>
                 </tr>
             `).join('');
         }
+
+        document.getElementById('btn-apply-filters').addEventListener('click', renderInvoices);
 
         // ============================================================
         // Detalle de factura
@@ -385,11 +507,43 @@
             const modal = document.getElementById('invoice-modal');
             const body = document.getElementById('invoice-modal-body');
 
+            let extraInfo = '';
+            
+            if (invoice.state === 'REJECTED' && invoice.rejection_reason) {
+                extraInfo = `
+                    <div class="invoice-alert rejection">
+                        <h5>💡 Motivo de rechazo</h5>
+                        <p>${invoice.rejection_reason}</p>
+                    </div>
+                `;
+            }
+            
+            if (invoice.state === 'PAID') {
+                extraInfo = `
+                    <div class="invoice-alert success">
+                        <h5>✅ Factura pagada</h5>
+                        <p><strong>CBU:</strong> 0170298440000001234567</p>
+                        <p><strong>Fecha de pago:</strong> ${formatDate(invoice.payment_date || '2026-07-01')}</p>
+                        <p><strong>N° de comprobante:</strong> ${invoice.confirmation_id}</p>
+                    </div>
+                `;
+            }
+
+            if (invoice.state === 'ESCALATED') {
+                extraInfo = `
+                    <div class="invoice-alert warning">
+                        <h5>⚠️ En revisión manual</h5>
+                        <p>Tu factura está siendo revisada por el equipo de aprobación.</p>
+                        <p>Te notificaremos cuando haya una resolución.</p>
+                    </div>
+                `;
+            }
+
             body.innerHTML = `
                 <div class="invoice-detail">
                     <div class="detail-header">
                         <h4>${invoice.invoice_id}</h4>
-                        <span class="badge ${getStatusClass(invoice.state)}">${getStatusLabel(invoice.state)}</span>
+                        <span class="badge ${invoice.state.toLowerCase()}">${getStatusLabel(invoice.state)}</span>
                     </div>
                     
                     <div class="detail-grid">
@@ -402,7 +556,7 @@
                             <span class="value amount">${formatCurrency(invoice.amount)}</span>
                         </div>
                         <div class="detail-item">
-                            <span class="label">Nro. Confirmación</span>
+                            <span class="label">N° Confirmación</span>
                             <span class="value mono">${invoice.confirmation_id || 'Pendiente'}</span>
                         </div>
                         <div class="detail-item">
@@ -411,37 +565,7 @@
                         </div>
                     </div>
 
-                    ${invoice.rejection_reason ? `
-                        <div class="rejection-info">
-                            <h5>💡 Motivo de rechazo</h5>
-                            <p>${invoice.rejection_reason}</p>
-                            <p class="hint">Podés contactarte con el departamento de cuentas a pagar para más información.</p>
-                        </div>
-                    ` : ''}
-
-                    ${invoice.state === 'APPROVED' ? `
-                        <div class="success-info">
-                            <h5>✅ Factura aprobada</h5>
-                            <p>Tu factura fue aprobada y está en proceso de pago.</p>
-                            <p class="hint">Recibirás el pago según las condiciones pactadas.</p>
-                        </div>
-                    ` : ''}
-
-                    ${invoice.state === 'PENDING' ? `
-                        <div class="pending-info">
-                            <h5>⏳ En revisión</h5>
-                            <p>Tu factura está siendo procesada por el sistema de aprobación.</p>
-                            <p class="hint">Podés consultar el estado en cualquier momento desde este portal.</p>
-                        </div>
-                    ` : ''}
-
-                    ${invoice.state === 'ESCALATED' ? `
-                        <div class="escalated-info">
-                            <h5>⚠️ Escalada a revisión manual</h5>
-                            <p>Tu factura requiere revisión por parte del departamento correspondiente.</p>
-                            <p class="hint">Te notificaremos cuando haya una resolución.</p>
-                        </div>
-                    ` : ''}
+                    ${extraInfo}
                 </div>
             `;
 
@@ -452,12 +576,96 @@
             document.getElementById('invoice-modal').classList.add('hidden');
         }
 
-        // Cerrar modal clickeando fuera
         document.getElementById('invoice-modal').addEventListener('click', (e) => {
             if (e.target.classList.contains('modal-overlay')) {
                 closeInvoiceModal();
             }
         });
+
+        // ============================================================
+        // Upload de factura
+        // ============================================================
+        const uploadArea = document.getElementById('upload-area');
+        const fileInput = document.getElementById('file-input');
+        const uploadResult = document.getElementById('upload-result');
+
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                handleFile(fileInput.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.type !== 'application/pdf') {
+                showToast('Solo se aceptan archivos PDF', 'error');
+                return;
+            }
+
+            if (file.size > 10 * 1024 * 1024) {
+                showToast('El archivo supera los 10 MB', 'error');
+                return;
+            }
+
+            uploadResult.classList.remove('hidden');
+            uploadResult.innerHTML = `
+                <div class="upload-processing">
+                    <div class="spinner"></div>
+                    <p>Procesando factura...</p>
+                </div>
+            `;
+
+            // Simular procesamiento
+            setTimeout(() => {
+                uploadResult.innerHTML = `
+                    <div class="upload-success">
+                        <h4>✅ Factura procesada</h4>
+                        <p>Tu factura fue subida exitosamente y está siendo procesada.</p>
+                        <p class="upload-hint">Podés consultar el estado desde "Mis facturas".</p>
+                        <button class="btn-primary" onclick="resetUpload()">Subir otra factura</button>
+                    </div>
+                `;
+                
+                // Agregar a la lista de facturas
+                const newInvoice = {
+                    invoice_id: `FC-2026-${currentSupplier.id}-NUEVA`,
+                    amount: 0,
+                    state: 'PENDING',
+                    invoice_date: new Date().toISOString().split('T')[0],
+                    confirmation_id: '',
+                    rejection_reason: ''
+                };
+                allInvoices.unshift(newInvoice);
+                updateStats();
+                renderInvoices();
+                
+                showToast('Factura subida exitosamente');
+            }, 2000);
+        }
+
+        function resetUpload() {
+            uploadResult.classList.add('hidden');
+            fileInput.value = '';
+        }
 
         // ============================================================
         // Chat
@@ -471,13 +679,12 @@
             const time = new Date().toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
             
             msg.innerHTML = `
-                <div class="chat-meta">${role === 'user' ? currentSupplier.name : 'Departamento de Cuentas'} · ${time}</div>
+                <div class="chat-meta">${role === 'user' ? currentSupplier.name : 'Soporte'} · ${time}</div>
                 <div class="chat-text">${text}</div>
             `;
             
             chatMessages.appendChild(msg);
             chatMessages.scrollTop = chatMessages.scrollHeight;
-            chatHistory.push({ role, text });
         }
 
         document.getElementById('chat-send').addEventListener('click', sendChatMessage);
@@ -498,7 +705,6 @@
             addChatMessage('user', text);
             input.value = '';
 
-            // Simular respuesta del sistema
             setTimeout(() => {
                 const response = generateAutoResponse(text);
                 addChatMessage('system', response);
@@ -508,18 +714,15 @@
         function generateAutoResponse(userMessage) {
             const msg = userMessage.toLowerCase();
             
-            if (msg.includes('estado') || msg.includes('estado de')) {
+            if (msg.includes('estado') || msg.includes('consultar')) {
                 const pending = allInvoices.filter(i => i.state === 'PENDING').length;
-                return `Según nuestros registros, tenés ${pending} factura(s) en proceso de revisión. ` +
-                       `Podés ver el detalle de cada una en la pestaña "Mis Facturas".`;
+                return `Según nuestros registros, tenés ${pending} factura(s) en proceso de revisión. Podés ver el detalle en "Mis facturas".`;
             }
             
             if (msg.includes('cobrar') || msg.includes('pago') || msg.includes('cuando')) {
                 const approved = allInvoices.filter(i => i.state === 'APPROVED');
                 if (approved.length > 0) {
-                    return `Tenés ${approved.length} factura(s) aprobada(s). Los pagos se realizan ` +
-                           `según las condiciones pactadas en el contrato. Podés contactarte con ` +
-                           `contabilidad para más información.`;
+                    return `Tenés ${approved.length} factura(s) aprobada(s). Los pagos se realizan según las condiciones pactadas. Contactá a contabilidad para más información.`;
                 }
                 return `No hay facturas aprobadas pendientes de cobro en este momento.`;
             }
@@ -527,36 +730,33 @@
             if (msg.includes('rechazad')) {
                 const rejected = allInvoices.filter(i => i.state === 'REJECTED');
                 if (rejected.length > 0) {
-                    return `Tenés ${rejected.length} factura(s) rechazada(s). Los motivos pueden ser: ` +
-                           `documentación incompleta, monto que excede el límite contractual, o datos incorrectos. ` +
-                           `Revisá el detalle en "Mis Facturas" o contactá a soporte.`;
+                    return `Tenés ${rejected.length} factura(s) rechazada(s). Los motivos pueden ser: documentación incompleta, monto excede el límite, o datos incorrectos.`;
                 }
                 return `No tenés facturas rechazadas en el sistema.`;
             }
             
             if (msg.includes('hola') || msg.includes('buenos') || msg.includes('buenas')) {
-                return `¡Hola ${currentSupplier.name}! ¿En qué puedo ayudarte hoy? ` +
-                       `Puedo asistirte con consultas sobre el estado de tus facturas, tiempos de pago, ` +
-                       `o cualquier duda sobre el proceso de aprobación.`;
+                return `¡Hola ${currentSupplier.name}! ¿En qué puedo ayudarte hoy? Puedo asistirte con consultas sobre el estado de tus facturas o tiempos de pago.`;
             }
             
-            // Respuesta genérica
-            return `Gracias por tu consulta. Para darte una respuesta precisa, ` +
-                   `necesito que me indiques el número de factura específico. ` +
-                   `También podés revisar el estado de todas tus facturas en la pestaña "Mis Facturas".`;
+            return `Gracias por tu consulta. Para darte una respuesta precisa, indicame el número de factura específico o revisá "Mis facturas".`;
         }
 
         // ============================================================
         // Inicialización
         // ============================================================
         document.addEventListener('DOMContentLoaded', () => {
-            // Verificar si hay sesión guardada
             const savedSupplier = localStorage.getItem('supplierSession');
             if (savedSupplier) {
                 currentSupplier = JSON.parse(savedSupplier);
-                showSupplierDashboard();
+                showApp();
             }
         });
+
+        // Mostrar botón flotante cuando está autenticado
+        if (currentSupplier) {
+            document.getElementById('chat-fab').classList.remove('hidden');
+        }
     </script>
 </body>
 </html>

@@ -1,210 +1,225 @@
-# Changelog — Sistema Multiagente de Aprobación de Facturas
+# Changelog — InvoiceFlow
 
-Todos los cambios notables de este proyecto se documentan acá. El formato
-sigue [Keep a Changelog](https://keepachangelog.com/) y el versionado
-sigue [Semantic Versioning](https://semver.org/).
+Todos los cambios notables de este proyecto serán documentados en este archivo.
 
----
-
-## [1.2.0] — 2026-07-04 — Dashboard y Portal de Proveedores
-
-### 🎉 Added
-
-- **Portal de Proveedores** (`/supplier`):
-  - Login con CUIT, ID de proveedor o nombre
-  - Vista de facturas por proveedor
-  - Filtros por estado (Aprobadas, Pendientes, Rechazadas, Escaladas)
-  - Chat con el departamento de Cuentas a Pagar
-- **Dashboard del sistema** (`/dashboard`):
-  - Estadísticas en tiempo real (facturas en inbox, procesadas, rechazadas)
-  - Conteo de decisiones por tipo
-  - Total de montos aprobados
-  - Últimos pagos procesados
-- **Base de datos de facturas** (`suppliers.db`):
-  - Tabla `invoices` con datos de prueba para cada proveedor
-  - Historial de estados y confirmaciones
-
-### 🐛 Fixed
-
-- **Ruta de `payments_db`** en `settings.py`:
-  - Cambiada de `platform/data/payments.db` a `data/payments.db`
-- **Query SQL del dashboard**:
-  - Corregido `processed_at` → `registered_at` en la tabla payments
-- **Router del portal de proveedores**:
-  - Corregida conexión a `suppliers.db` en lugar de `payments.db`
-  - Corregido uso de `row[]` en lugar de `row.get()` para SQLite Row
-- **Ruteo del portal de proveedores**:
-  - Configurado StaticFiles con `html=True` para servir index.html automáticamente
-  - Rutas `/supplier`, `/supplier/` y `/supplier/portal` funcionan correctamente
-
-### 📊 Datos de prueba
-
-Proveedores disponibles en el portal:
-
-| ID | Nombre | CUIT | Estado |
-|---|---|---|---|
-| SUP001 | TechCorp SA | 30-71234567-0 | ACTIVO |
-| SUP002 | Papelería Norte SRL | 30-69874523-1 | ACTIVO |
-| SUP003 | Servicios Rápidos SA | 30-70111222-3 | INACTIVO |
-| SUP004 | Limpieza Total SRL | 30-70555666-7 | ACTIVO |
-| SUP005 | Consultoría Digital SA | 30-71234999-2 | ACTIVO |
+El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/).
 
 ---
 
-## [1.1.0] — 2026-06-28 — Fix de compatibilidad `chromadb` ↔ `google-genai`
+## [1.0.0] — 2025-XX-XX
 
-### ⚠️ Changed (breaking changes técnicas, no de API)
+### Added
 
-- **Migración de `google-generativeai` → `google-genai`** para embeddings
-  RAG.
-- **Cambio de modelo de embeddings** `models/embedding-001` →
-  `models/gemini-embedding-001`.
+#### Sistema de Guardrails Completo
+- **26 reglas de guardrail** implementadas en 4 categorías:
+  - **VR (Validación Estructural)**: 7 reglas para validar formato de archivos y datos
+  - **BR (Reglas de Negocio)**: 10 reglas para control de aprobación
+  - **SR (Seguridad)**: 5 reglas para protección contra accesos indebidos
+  - **CR (Continuidad)**: 3 reglas para manejo de fallas
+- Archivo de configuración `rules.yaml` como fuente única de verdad
+- Motor `guardrail_engine.py` que procesa las reglas en orden de prioridad
 
-### 🐛 Fixed
+#### Agentes ADK
+- **Router Agent**: Clasificador de intención para canal de chat
+  - Detecta: new_invoice, check_status, chitchat, technical_support
+  - Implementa reglas SR-03, SR-04, SR-05
+- **Invoice Manager Agent**: Gestor de facturas con herramientas de carpeta
+- **External Auditor Agent**: Agente A2A para revisión de facturas escaladas
 
-- **`ValueError: ClientOptions does not accept an option 'headers'`** al
-  correr `python rag/ingest.py`.
+#### Flujo B — Consulta de Estado
+- Nueva tool `invoice_status_tool.py`
+- Endpoint para consultar estado de facturas existentes
+- Resumen de estados por proveedor (5 badges)
 
-### 🔍 Root cause
+#### Sistema ML de Riesgo
+- Tool `ml_risk_tool.py` para evaluación de riesgo
+- Modelo entrenable con scikit-learn
+- Features: monto, antigüedad, historial de rechazos, fraccionamiento
+- Recomendaciones: aprobar, revisar, escalar
 
-`google-generativeai 0.8.6` (última versión del SDK viejo, ya deprecado
-por Google) introdujo una opción `headers` en `genai.configure()` que es
-rechazada por `chromadb 1.5.x` al instanciar
-`GoogleGenerativeAiEmbeddingFunction`. El wrapper oficial de Chroma quedó
-incompatible con el SDK viejo de Google.
+#### Frontend Actualizado
 
-### ✅ Solución implementada
+**Supplier Portal (Con Sidebar)**:
+- Header global con logo y datos del proveedor
+- Sidebar de navegación: Inicio, Subir factura, Mis facturas, Chat
+- Dashboard con 5 badges de estado (Pendiente, Aprobada, Escalada, Rechazada, Pagada)
+- Upload de PDF con drag & drop
+- Historial filtrable por año, mes, estado
+- Modal de detalle con información contextual según estado
+- Chat flotante accesible desde cualquier página
+- Footer con datos de contacto
 
-1. **Nueva clase `GoogleGenAiEmbeddingFunction`** en
-   [`rag/embedding_function.py`](rag/embedding_function.py):
-   - Implementa el protocolo `EmbeddingFunction` de ChromaDB (`__call__`).
-   - Usa el SDK nuevo `google.genai.Client` (no deprecado, mantenido
-     activamente).
-   - Acepta parámetros `api_key`, `model_name`, `task_type`.
+**Back Office (Con Sidebar)**:
+- Sidebar de navegación: Dashboard, Inbox, Historial, Chat interno, Estado de Agentes, Evaluación, Docs
+- Dashboard con tarjetas de estados y filtro por año/mes
+- Panel de Inbox con upload y procesamiento
+- Chat interno diferenciado del chat de soporte
+- Página de Observabilidad con métricas de agentes
+- Página de Evaluación con resultados LLM-as-a-Judge
+- Documentación técnica integrada
 
-2. **`rag/ingest.py`** actualizado para usar la nueva clase con
-   `task_type="RETRIEVAL_DOCUMENT"`.
+#### Evaluación y Testing
+- **20 Golden Cases** en `invoiceflow-dataset.json`
+- Configuración de evaluación `eval_config.yaml`
+- Métricas: accuracy, precision, recall, latency, coverage
 
-3. **`rag/retriever.py`** actualizado para usar la nueva clase con
-   `task_type="RETRIEVAL_QUERY"` (optimiza similitud para queries).
+#### A2A External Auditor
+- Servidor independiente en puerto 8003
+- Agente auditor externo para revisión de facturas escaladas
+- Dictámenes con hallazgos categorizados
 
-4. **Modelo migrado**: `models/gemini-embedding-001` es el único modelo
-   de embeddings estable en `v1beta` al momento del fix. El wrapper
-   acepta un parámetro `model_name` para permitir cambiarlo en el
-   futuro sin tocar el código.
+### Changed
 
-### 📊 Impacto medido
+#### Backend — Imports Relativos
+- Todos los imports internos del backend ahora usan imports relativos (`.`)
+- Archivos `__init__.py` agregados en todos los paquetes
+- Estructura de directorios como paquetes Python válidos
 
-- **Ingesta RAG**: ahora completa en ~8 segundos para 21 chunks (4
-  contratos). Pre-fix: fallaba al 100%.
-- **Retrieval**: latencia similar a la implementación anterior (~1.2s
-  por query).
-- **Calidad de embeddings**: `gemini-embedding-001` tiene 3072
-  dimensiones vs 768 de `embedding-001`. Más rico semánticamente.
+#### Orquestador HTTP
+- `platform/backend/orchestrator.py` reescrito para usar imports relativos
+- `service_clients.py` actualizado
+- Routers (`inbox_router.py`, `chat_router.py`, `watcher.py`) con imports corregidos
 
-### ⚠️ Notas de migración para devs
+#### Frontend
+- Cambio de navegación por tabs a sidebar (especificación original)
+- Actualización de CSS para diseño con sidebar
+- Actualización de JavaScript para navegación entre páginas
 
-Si tenías el código previo con `models/embedding-001` y estás viendo
-este CHANGELOG:
+### Fixed
 
-1. Hacé `git pull` (o equivalente) para bajar el fix.
-2. **No** hace falta reinstalar nada — los paquetes `google-genai` y
-   `google-generativeai` siguen ambos en `requirements.txt`.
-3. Volvé a correr `python rag/ingest.py` para regenerar el índice.
-4. La interfaz de `agent.py` y los agentes no cambió — el fix es
-   transparente.
+#### Module Not Found Errors
+- Problema de imports en `platform.backend.main`
+- Conflictos con directorio `platform/` vs módulo `platform` de Python
+- Imports absolutos cambiados a relativos
 
----
-
-## [1.0.0] — 2026-06-15 — Release inicial
-
-### 🎉 Added (primera versión funcional)
-
-- **4 agentes ADK** implementados:
-  - `invoice_orchestrator` (root) — coordina + guardrail.
-  - `validator_agent` (sub) — valida proveedor via MCP mock.
-  - `contract_agent` (sub) — control contractual via RAG.
-  - `payment_agent` (sub) — persiste en SQLite.
-- **3 tools (`FunctionTool`)**:
-  - `supplier_lookup_tool` — consulta dict de 5 proveedores mock.
-  - `search_contract_tool` — wrapper sobre `rag.retriever`.
-  - `register_payment_tool` — INSERT en SQLite con `confirmation_id`.
-- **RAG sobre ChromaDB**:
-  - `rag/ingest.py` — chunking 500/50 chars, embeddings con
-    `models/embedding-001`.
-  - `rag/retriever.py` — query semántica + regex de monto.
-  - 4 contratos de ejemplo en `data/contracts/` (SUP001, SUP002, SUP004,
-    SUP005).
-- **Guardrail estructural** (`guardrails/invoice_guardrail.py`):
-  - 7 reglas (campos, formato, monto, fecha).
-  - Acciones: APPROVE / REJECT / ESCALATE.
-- **Persistencia en SQLite** (`tools/payment_db_tool.py`):
-  - Tabla `payments` con índices por `invoice_id` y `supplier_id`.
-  - `confirmation_id` único por registro (`PAY-XXXXXXXX`).
-- **Gestión de sesiones** (`sessions/session_manager.py`):
-  - `InvoiceSessionManager` wrapper sobre `InMemorySessionService`.
-  - State inicial con todos los campos de la consigna.
-- **Evaluación** (`evaluation/`):
-  - 6 golden cases (GC001-GC006) cubriendo todas las ramas.
-  - LLM as a Judge con `gemini-2.0-flash-latest`.
-  - BertScore con `xlm-roberta-base` multilingüe.
-- **UI**: `adk web` con FastAPI + React.
-- **Automatización**:
-  - `setup.bat` — setup completo desde cero.
-  - `start.bat` — levanta la UI.
-  - `smoke_test.bat` — corre los 9 smoke tests.
-- **Documentación**:
-  - `README.md` — descripción, arquitectura, uso.
-  - `INSTALL.md` — guía de instalación.
-  - `CHANGELOG.md` — este archivo.
+#### Path Issues en Windows
+- Scripts `.bat` corregidos para ejecutar desde cualquier ubicación
+- Manejo de rutas con espacios y caracteres especiales
 
 ---
 
-## Tipos de cambios
+## [0.9.0] — 2025-01-15
 
-- **🎉 Added**: nueva funcionalidad.
-- **⚠️ Changed**: cambio en funcionalidad existente.
-- **🐛 Fixed**: bug fix.
-- **🗑️ Deprecated**: funcionalidad que se va a eliminar.
-- **❌ Removed**: funcionalidad eliminada.
-- **🔒 Security**: fix de seguridad.
-- **📊 Performance**: mejora de performance.
-- **📚 Docs**: solo cambios de documentación.
-- **🧪 Test**: agregado o modificación de tests.
+### Added
 
----
+#### Sistema Multiagente ADK
+- Implementación base del orquestador con Google ADK
+- Agentes: validator_agent, contract_agent, payment_agent
+- Integración con ChromaDB para búsqueda RAG
+- Guardrails básicos (versión inicial)
 
-## Roadmap (ideas para versiones futuras)
+#### Microservicios
+- Supplier Service (puerto 8001) para validación de proveedores
+- Contract Service (puerto 8002) para control contractual
+- Base de datos SQLite para persistencia
 
-### [1.3.0] — Planeado
-- Migrar ChromaDB a Qdrant para soportar multi-tenancy.
-- Agregar autenticación OAuth en `adk web`.
-- Dashboard con métricas (pass rate, latencia, costo por factura).
+#### Frontend
+- Back Office con tabs para navegación
+- Supplier Portal con login básico
+- Dashboard con estadísticas de facturas
 
-### [2.0.0] — Breaking change planeado
-- Reemplazar `gemini-2.0-flash` por `gemini-2.5-pro` cuando esté GA.
-  Esto cambia la latencia y el costo por factura.
-
----
-
-## Cómo reportar un bug
-
-1. Buscar en [issues] si ya está reportado.
-2. Si no, crear un nuevo issue con:
-   - Pasos para reproducir.
-   - Salida esperada vs obtenida.
-   - Versión de Python, sistema operativo.
-   - Logs relevantes (especialmente stack traces completos).
-3. Taggear con la etiqueta apropiada (`bug`, `enhancement`, `docs`).
+#### Documentación
+- README.md con descripción del sistema
+- Especificaciones técnicas en docs/
+- Documento de guardrails
 
 ---
 
-## Cómo contribuir
+## [0.8.0] — 2025-01-01
 
-1. Fork del repo.
-2. Crear branch desde `main`: `git checkout -b feat/mi-feature`.
-3. Hacer commits con mensaje descriptivo:
-   `git commit -m "feat: agregar agente de detección de fraude"`.
-4. Asegurarse de que `smoke_test.bat` pasa.
-5. Asegurarse de que `python -m evaluation.metrics` no baja el pass rate.
-6. Abrir PR describiendo el cambio y referenciando el issue.
+### Added
+
+- Estructura base del proyecto
+- Definición de agentes y herramientas
+- Base de datos con proveedores y contratos de prueba
+- API REST básica con FastAPI
+
+---
+
+## Notas de Versión
+
+### Convenciones de Versión
+- **MAJOR**: Cambios incompatibles en la API
+- **MINOR**: Nuevas funcionalidades compatibles
+- **PATCH**: Correcciones de bugs
+
+### Estado de Releases
+- 🟢 **Stable**: Funciona correctamente
+- 🟡 **Beta**: Funcional pero con limitaciones conocidas
+- 🔴 **Alpha**: En desarrollo activo
+
+---
+
+## Migración entre Versiones
+
+### De 0.9.x a 1.0.0
+
+1. **Actualizar dependencias:**
+```bash
+pip install -r requirements.txt
+```
+
+2. **Limpiar caché de Python:**
+```bash
+rmdir /s /q __pycache__
+rmdir /s /q platform\__pycache__
+rmdir /s /q agents\__pycache__
+# etc.
+```
+
+3. **Re-iniciar servicios:**
+```bash
+python INICIAR.bat
+```
+
+### Configuración Requerida
+
+El archivo `rules.yaml` es nuevo en 1.0.0. Asegúrate de que exista en:
+```
+guardrails/rules.yaml
+```
+
+---
+
+## Próximas Versiones
+
+### [1.1.0] — Planeado
+- [ ] Integración completa con Google ADK Eval
+- [ ] Dashboard en tiempo real con WebSockets
+- [ ] Notificaciones push al proveedor
+- [ ] Exportación de reportes en PDF/Excel
+
+### [1.2.0] — Planeado
+- [ ] Integración con sistema contable externo
+- [ ] Módulo de reporting avanzado
+- [ ] Machine Learning para predicción de fraude
+- [ ] API GraphQL como alternativa a REST
+
+### [2.0.0] — Roadmap
+- [ ] Microservicios con Kubernetes
+- [ ] Base de datos PostgreSQL
+- [ ] Autenticación OAuth2/OIDC
+- [ ] Multi-tenant architecture
+
+---
+
+## Créditos
+
+Desarrollado para el Trabajo Práctico de Sistemas Multiagentes
+Universidad Palermo — 2025
+
+### Autores
+- Equipo de desarrollo InvoiceFlow
+
+### Tecnologías
+- Google ADK
+- FastAPI
+- ChromaDB
+- SQLite
+- Google Gemini
+
+---
+
+## Licencia
+
+Este proyecto es académico y fue desarrollado con fines educativos.

@@ -1,0 +1,198 @@
+# =============================================================================
+# Configuración de Evaluación — InvoiceFlow
+# =============================================================================
+# Usado por `agents-cli eval generate` y `agents-cli eval grade`
+# =============================================================================
+
+evaluation:
+  # Nombre del dataset de golden cases
+  dataset: "invoiceflow-dataset.json"
+  
+  # Categorías a evaluar
+  categories:
+    - structural_validation
+    - business_rules
+    - security
+    - continuity
+    - happy_path
+
+  # Número de casos de prueba por categoría
+  samples_per_category: 4
+
+# =============================================================================
+# Métricas
+# =============================================================================
+
+metrics:
+  # Métricas principales (requeridas)
+  required:
+    - name: "accuracy"
+      description: "Porcentaje de casos donde la acción coincide exactamente"
+      threshold: 0.95
+
+    - name: "precision"
+      description: "De las facturas aprobadas/escaladas/rechazadas, cuántas están correctas"
+      threshold: 0.90
+
+    - name: "recall"
+      description: "De las facturas que deberían aprobarse/escalarse/rechazarse, cuántas se detectaron"
+      threshold: 0.90
+
+  # Métricas secundarias (informativas)
+  optional:
+    - name: "latency_ms"
+      description: "Tiempo promedio de respuesta del sistema"
+      threshold: 2000
+
+    - name: "guardrail_coverage"
+      description: "Porcentaje de reglas de guardrail cubiertas por tests"
+      threshold: 1.0
+
+# =============================================================================
+# Modelos a evaluar
+# =============================================================================
+
+models:
+  primary:
+    name: "gemini-2.5-flash"
+    description: "Modelo principal de producción"
+
+  comparison:
+    - name: "gemini-2.0-flash"
+      description: "Modelo de comparación"
+
+# =============================================================================
+# Agentes a evaluar
+# =============================================================================
+
+agents:
+  - name: "invoice_orchestrator"
+    description: "Orquestador principal"
+    methods:
+      - "full_flow"
+      - "guardrail_only"
+
+  - name: "validator_agent"
+    description: "Validador de proveedores"
+    methods:
+      - "validate_supplier"
+
+  - name: "contract_agent"
+    description: "Verificación contractual"
+    methods:
+      - "check_contract"
+
+  - name: "router_agent"
+    description: "Clasificador de intención"
+    methods:
+      - "classify_intent"
+
+  - name: "external_auditor_agent"
+    description: "Auditor externo"
+    methods:
+      - "audit_invoice"
+
+# =============================================================================
+# Configuración de prompts
+# =============================================================================
+
+prompts:
+  # Prompt para LLM-as-a-Judge
+  judge_system: |
+    Sos un juez experto en evaluación de sistemas de aprobación de facturas.
+    Tu tarea es evaluar si la respuesta del sistema es correcta dado el caso de prueba.
+
+    Criterios:
+    1. La acción (APPROVE/REJECT/ESCALATE/BLOCK) debe coincidir con lo esperado
+    2. El reason/mensaje debe ser apropiado para la situación
+    3. El rule_id detectado debe corresponder a la regla correcta
+
+    Devolvé tu veredicto en JSON con este formato:
+    {
+      "correct": true/false,
+      "score": 0.0-1.0,
+      "feedback": "Explicación breve del veredicto"
+    }
+
+  judge_few_shot:
+    - input:
+        invoice: {"amount": 600000}
+        expected: {"action": "ESCALATE", "reason": "Monto > $500k"}
+      output:
+        system_action: "ESCALATE"
+        system_reason: "Supera el monto de aprobación automática"
+      expected_verdict:
+        correct: true
+        score: 1.0
+        feedback: "Correcto: monto supera umbral y se escala"
+
+    - input:
+        invoice: {"amount": -100}
+        expected: {"action": "REJECT", "reason": "Monto inválido"}
+      output:
+        system_action: "REJECT"
+        system_reason: "Monto de factura inválido"
+      expected_verdict:
+        correct: true
+        score: 1.0
+        feedback: "Correcto: monto negativo rechazado"
+
+# =============================================================================
+# Reglas de Guardrail a verificar
+# =============================================================================
+
+guardrails:
+  structural:
+    - VR-01  # Formato PDF
+    - VR-02  # Tamaño
+    - VR-03  # Campos obligatorios
+    - VR-04  # CUIT válido
+    - VR-05  # Fecha válida
+    - VR-06  # Monto > 0
+    - VR-07  # No duplicada
+
+  business:
+    - BR-01  # Proveedor existe
+    - BR-02  # Proveedor activo
+    - BR-03  # No vencida
+    - BR-04  # Razón social coincide
+    - BR-05  # Dentro del límite
+    - BR-06  # Sin contrato → escalar
+    - BR-07  # Monto > $500k → escalar
+    - BR-08  # Alto riesgo ML → escalar
+    - BR-09  # Fraccionamiento → escalar
+    - BR-10  # Ya procesada → bloquear
+
+  security:
+    - SR-01  # Inyección prompt
+    - SR-02  # Acción no autorizada
+    - SR-03  # Intento de acceso cruzado
+    - SR-04  # Rate limiting
+    - SR-05  # Info interna
+
+  continuity:
+    - CR-01  # Servicio caído
+    - CR-02  # Reintentos
+    - CR-03  # Msg amigable en error técnico
+
+# =============================================================================
+# Outputs
+# =============================================================================
+
+output:
+  # Directorio para resultados
+  results_dir: "tests/eval/results"
+
+  # Formato de reportes
+  formats:
+    - "json"
+    - "html"
+    - "markdown"
+
+  # Generar dashboard
+  dashboard: true
+  dashboard_path: "tests/eval/results/dashboard.html"
+
+  # Logs detallados
+  verbose: true
+  log_path: "tests/eval/results/logs"

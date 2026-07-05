@@ -5,7 +5,7 @@ from typing import Optional
 
 import httpx
 
-from settings import settings
+from .settings import settings
 
 
 class SupplierClient:

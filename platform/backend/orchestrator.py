@@ -23,8 +23,8 @@ from pathlib import Path
 from typing import Dict, Optional
 
 from guardrails.invoice_guardrail import apply_invoice_guardrail
-from service_clients import supplier_client, contract_client
-from settings import settings
+from .service_clients import supplier_client, contract_client
+from .settings import settings
 
 
 # Regex para normalizar supplier_id

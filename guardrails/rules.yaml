@@ -1,0 +1,324 @@
+# =============================================================================
+# InvoiceFlow — Reglas de Guardrail
+# Fuente única de verdad para todas las políticas del sistema
+# =============================================================================
+# Categorías:
+#   - structural (VR): Validación de formato/estructura del documento
+#   - business (BR): Reglas de negocio para aprobación de facturas
+#   - security (SR): Controles de seguridad y protección
+#   - continuity (CR): Manejo de fallas y continuidad operativa
+# =============================================================================
+
+guardrails:
+
+  # ===========================================================================
+  # VR — VALIDACIÓN ESTRUCTURAL (antes de procesar la factura)
+  # ===========================================================================
+  
+  - id: VR-01
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 1
+    condicion: "archivo.tipo != 'pdf'"
+    accion: reject
+    mensaje: "Formato de archivo no soportado, debe ser PDF"
+    recoverable: false
+
+  - id: VR-02
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 2
+    condicion: "archivo.tamanio_mb > 10"
+    accion: reject
+    mensaje: "Archivo demasiado grande (máximo 10 MB)"
+    recoverable: false
+
+  - id: VR-03
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 3
+    condicion: "faltan_campos_obligatorios(cuit, razon_social, monto, fecha, numero_factura)"
+    accion: reject
+    mensaje: "Campos obligatorios faltantes"
+    recoverable: false
+    detalle_campos: true
+
+  - id: VR-04
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 4
+    condicion: "not_validar_cuit(cuit)"
+    accion: reject
+    mensaje: "CUIT con formato inválido"
+    recoverable: false
+
+  - id: VR-05
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 5
+    condicion: "fecha_emision mal_formada OR fecha_emision > hoy"
+    accion: reject
+    mensaje: "Fecha de emisión inválida"
+    recoverable: false
+
+  - id: VR-06
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 6
+    condicion: "monto <= 0"
+    accion: reject
+    mensaje: "Monto de factura inválido"
+    recoverable: false
+
+  - id: VR-07
+    tipo: structural
+    aplica_a: invoice_manager_agent
+    prioridad: 7
+    condicion: "existe_factura_duplicada(numero_factura, supplier_id)"
+    accion: reject
+    mensaje: "Factura duplicada"
+    recoverable: false
+
+  # ===========================================================================
+  # BR — NEGOCIO (durante el procesamiento)
+  # ===========================================================================
+
+  - id: BR-01
+    tipo: business
+    aplica_a: validator_agent
+    prioridad: 10
+    condicion: "not existe_proveedor(supplier_id)"
+    accion: reject
+    mensaje: "Proveedor no registrado"
+    recoverable: false
+
+  - id: BR-02
+    tipo: business
+    aplica_a: validator_agent
+    prioridad: 11
+    condicion: "proveedor.status != 'ACTIVE'"
+    accion: reject
+    mensaje: "Proveedor inactivo"
+    recoverable: false
+
+  - id: BR-03
+    tipo: business
+    aplica_a: contract_agent
+    prioridad: 12
+    condicion: "dias_desde_emision > plazo_contrato_o_60_dias"
+    accion: reject
+    mensaje: "Factura vencida"
+    recoverable: false
+
+  - id: BR-04
+    tipo: business
+    aplica_a: contract_agent
+    prioridad: 13
+    condicion: "razon_social_factura != razon_social_contrato"
+    accion: reject
+    mensaje: "Razón social no coincide con el proveedor registrado"
+    recoverable: false
+
+  - id: BR-05
+    tipo: business
+    aplica_a: contract_agent
+    prioridad: 14
+    condicion: "monto > limite_contractual(contrato + adendas)"
+    accion: reject
+    mensaje: "Monto excede el límite contractual"
+    recoverable: false
+
+  - id: BR-06
+    tipo: business
+    aplica_a: contract_agent
+    prioridad: 15
+    condicion: "not existe_contrato_vigente(supplier_id)"
+    accion: escalate
+    mensaje: "Sin contrato vigente registrado, requiere revisión manual"
+    recoverable: true
+
+  - id: BR-07
+    tipo: business
+    aplica_a: guardrail_step
+    prioridad: 16
+    condicion: "monto > 500000"
+    accion: escalate
+    mensaje: "Supera el monto de aprobación automática"
+    recoverable: true
+
+  - id: BR-08
+    tipo: business
+    aplica_a: guardrail_step
+    prioridad: 17
+    condicion: "risk_score == 'alto'"
+    accion: escalate
+    mensaje: "Factura clasificada como alto riesgo, requiere revisión"
+    recoverable: true
+
+  - id: BR-09
+    tipo: business
+    aplica_a: guardrail_step
+    prioridad: 18
+    condicion: "suma_facturas_30_dias + monto > 500000"
+    accion: escalate
+    mensaje: "Monto acumulado del período supera el límite, posible fraccionamiento"
+    recoverable: true
+    detalle: "Anti-fragmentation check"
+
+  - id: BR-10
+    tipo: business
+    aplica_a: invoice_manager_agent
+    prioridad: 0
+    condicion: "estado_actual IN ['REJECTED', 'PAID']"
+    accion: block
+    mensaje: "Esta factura ya fue procesada, no puede reenviarse"
+    recoverable: false
+
+  # ===========================================================================
+  # SR — SEGURIDAD
+  # ===========================================================================
+
+  - id: SR-01
+    tipo: security
+    aplica_a: invoice_manager_agent
+    prioridad: 100
+    condicion: "texto_extraido contiene_inyeccion_prompt"
+    accion: reject
+    mensaje: "Contenido sospechoso detectado en el documento"
+    recoverable: false
+    log_level: warning
+
+  - id: SR-02
+    tipo: security
+    aplica_a: payment_agent
+    prioridad: 101
+    condicion: "accion_solicitada NOT IN ['registrar', 'consultar']"
+    accion: reject
+    mensaje: "Acción no autorizada"
+    recoverable: false
+
+  - id: SR-03
+    tipo: security
+    aplica_a: validator_agent
+    prioridad: 102
+    condicion: "cuit_solicitado != cuit_autenticado"
+    accion: reject
+    mensaje: "No autorizado a consultar datos de otro proveedor"
+    recoverable: false
+
+  - id: SR-04
+    tipo: security
+    aplica_a: invoice_manager_agent
+    prioridad: 103
+    condicion: "facturas_enviadas_ultima_hora > 20"
+    accion: block
+    mensaje: "Límite de envíos alcanzado, intentar más tarde"
+    recoverable: true
+    cooldown_minutes: 60
+
+  - id: SR-05
+    tipo: security
+    aplica_a: router_agent
+    prioridad: 104
+    condicion: "mensaje solicita_info_interna_sistema"
+    accion: redirect
+    mensaje: "No puedo compartir esa información"
+    recoverable: true
+
+  # ===========================================================================
+  # CR — CONTINUIDAD (manejo de fallas)
+  # ===========================================================================
+
+  - id: CR-01
+    tipo: continuity
+    aplica_a: [validator_agent, contract_agent]
+    prioridad: 200
+    condicion: "servicio_externo no_responde tras_reintentos"
+    accion: mark_pending_technical
+    mensaje: "Estamos procesando tu factura, te confirmaremos en breve"
+    recoverable: true
+    notificar_backoffice: true
+
+  - id: CR-02
+    tipo: continuity
+    aplica_a: [validator_agent, contract_agent]
+    prioridad: 199
+    condicion: "falla_transitoria servicio_externo"
+    accion: retry
+    mensaje: null
+    recoverable: true
+    max_retries: 3
+    backoff_seconds: [1, 2, 4]
+
+  - id: CR-03
+    tipo: continuity
+    aplica_a: invoice_manager_agent
+    prioridad: 201
+    condicion: "estado == 'PENDIENTE_TECNICO'"
+    accion: wait
+    mensaje: "Estamos procesando tu factura, te confirmaremos en breve"
+    recoverable: true
+    mostrar_error_tecnico: false
+
+# =============================================================================
+# PIPELINE DE EVALUACIÓN (orden de ejecución obligatorio)
+# =============================================================================
+pipeline:
+  orden:
+    - paso: 0
+      regla: BR-10
+      descripcion: "Verificar si la factura ya fue procesada"
+    - paso: 1
+      reglas: [VR-01, VR-02, VR-03, VR-04, VR-05, VR-06, VR-07]
+      descripcion: "Validación estructural del archivo y datos"
+    - paso: 2
+      reglas: [SR-01]
+      descripcion: "Chequeo de contenido sospechoso en PDF"
+    - paso: 3
+      reglas: [BR-01, BR-02]
+      agente: validator_agent
+      continuacion: CR-01, CR-02
+      descripcion: "Verificar existencia y estado del proveedor"
+    - paso: 4
+      reglas: [BR-03, BR-04, BR-05, BR-06]
+      agente: contract_agent
+      continuacion: CR-01, CR-02
+      descripcion: "Validación contractual (vencimiento, razón social, monto)"
+    - paso: 5
+      reglas: [BR-07, BR-08, BR-09]
+      agente: guardrail_step
+      descripcion: "Verificaciones de monto, riesgo ML y fraccionamiento"
+    - paso: 6
+      reglas: [SR-02]
+      agente: payment_agent
+      descripcion: "Registrar resultado final"
+  
+  transversales:
+    - reglas: [SR-03, SR-04, SR-05]
+      momento: cualquier
+      canal: chat
+      descripcion: "Seguridad aplicables en cualquier punto del chat"
+
+# =============================================================================
+# CONFIGURACIÓN DE SERVICIOS EXTERNOS
+# =============================================================================
+servicios_externos:
+  supplier_service:
+    url: "http://127.0.0.1:8001"
+    timeout_segundos: 5
+    reintentos_max: 3
+
+  contract_service:
+    url: "http://127.0.0.1:8002"
+    timeout_segundos: 5
+    reintentos_max: 3
+
+# =============================================================================
+# CONSTANTES DEL SISTEMA
+# =============================================================================
+constantes:
+  MONTO_MAXIMO_AUTOAPROBACION: 500000
+  PLAZO_FACTURA_DIAS: 60
+  VENTANA_FRAGMENTACION_DIAS: 30
+  LIMITE_FACTURAS_POR_HORA: 20
+  TAMANIO_MAXIMO_ARCHIVO_MB: 10

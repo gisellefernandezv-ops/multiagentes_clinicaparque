@@ -18,9 +18,9 @@ from typing import Optional
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
-from settings import settings
-from orchestrator import process_invoice
-from watcher import parse_invoice_file, move_file
+from .settings import settings
+from .orchestrator import process_invoice
+from .watcher import parse_invoice_file, move_file
 
 
 router = APIRouter(prefix="/chat", tags=["chat"])
@@ -146,7 +146,6 @@ def handle_list_inbox() -> dict:
 
 def handle_history() -> dict:
     import sqlite3
-    from settings import settings
     if not settings.payments_db.exists():
         return {"intent": "history", "message": "Sin historial aún.", "data": {"items": []}}
     with sqlite3.connect(str(settings.payments_db)) as conn:
