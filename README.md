@@ -734,3 +734,23 @@ registrado con su `rejection_reason`. Esto permite:
 
 El código fuente está disponible en:
 https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
+
+### GITHUB
+…or create a new repository on the command line
+echo "# multiagentes_clinicaparque" >> README.md
+- git init
+- git add README.md
+- git commit -m "first commit"
+- git branch -M main
+- git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
+- git push -u origin main
+
+…or push an existing repository from the command line
+- git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
+- git branch -M main
+- git push -u origin main
+
+credenciales git
+
+usr: giselle.fernandezv@gmail.com
+pwd: Calitamendoza1603
