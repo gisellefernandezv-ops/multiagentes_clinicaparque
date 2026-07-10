@@ -1,0 +1,50 @@
+CONTRATO DE CONSULTORÍA Y ASESORAMIENTO DIGITAL
+
+Proveedor: Consultoría Digital SA
+CUIT: 30-71234999-2
+Identificador interno: SUP005
+Categoría: Servicios profesionales de consultoría estratégica y transformación digital
+
+Fecha de inicio: 2025-01-01
+Fecha de vencimiento: 2026-06-30
+Vigencia: 18 meses.
+
+OBJETO DEL CONTRATO
+El proveedor brindará servicios de consultoría estratégica en transformación
+digital, incluyendo diagnóstico de procesos, diseño de roadmap tecnológico,
+implementación de metodologías ágiles y acompañamiento en proyectos de
+innovación. Los entregables se organizarán en hitos mensuales documentados
+en informes ejecutivos.
+
+ALCANCE
+- Hasta 200 horas mensuales de consultoría senior.
+- Workshops trimestrales de capacitación para el equipo interno.
+- Acceso a plataforma de gestión del conocimiento durante toda la
+  contractualidad.
+
+CONDICIONES ECONÓMICAS
+Monto máximo autorizado por factura: $200.000 (doscientos mil pesos).
+Este límite aplica por hito mensual facturado. Servicios extraordinarios no
+contemplados en el alcance serán cotizados mediante propuesta económica
+adicional sujeta a aprobación.
+
+Honorarios fijos mensuales: $180.000.
+Horas adicionales: $25.000 por bloque de 4 horas.
+Condiciones de pago: a 30 días fecha de aceptación del informe de avance.
+
+CONFIDENCIALIDAD
+Toda la información intercambiada en el marco de este contrato se considera
+estrictamente confidencial. La obligación de confidencialidad se extiende por
+3 años posteriores a la finalización del contrato.
+
+PROPIEDAD INTELECTUAL
+Todos los deliverables, informes, metodologías y materiales producidos en el
+marco de este contrato son de propiedad exclusiva de la empresa contratante.
+
+PENALIDADES
+Por incumplimiento de hitos: 2% del monto del hito por cada semana de retraso,
+con tope del 15% del monto total del hito.
+
+RESCISIÓN
+Cualquiera de las partes podrá rescindir el contrato con un preaviso de 60
+días, abonando las horas efectivamente trabajadas hasta la fecha de corte.

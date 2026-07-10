@@ -1,0 +1,59 @@
+================================================================================
+                            [FACTURA A]
+================================================================================
+
+[EMISOR]
+Razon Social:    TechCorp Argentina SA
+Rubro/Matricula: Servicios de desarrollo de software
+Direccion:       Av. Libertador 5000, CABA
+CUIT:            30-71234567-0
+Ing. Brutos:     901-123456-7
+Inicio Act.:     01/2015
+Condicion IVA:   IVA Responsable Inscripto
+
+================================================================================
+CODIGO Nº 01                          FACTURA A
+                                       Nº 0001 - 00000001
+FECHA: 28/06/2026
+================================================================================
+
+[RECEPTOR]
+Señor/es:     EMPRESA DEMO SA
+Dirección:    Av. Corrientes 1234, Piso 5
+Localidad:    CABA (1414)
+CUIT:         30-12345678-9
+Condicion IVA: IVA Responsable Inscripto
+
+Condiciones de Venta: Contado    [X]
+                      Cta. Cte.   [ ]
+
+Remito Nº:    -
+
+================================================================================
+CANT.  DESCRIPCION                              P. UNITARIO (sin IVA)  IMPORTE (sin IVA)
+================================================================================
+   3   Servicio de consultoría técnica hora                25.000,00             75.000,00
+   3   Desarrollo feature sprint 2 semanas                120.000,00            360.000,00
+   2   Licencia de software mensual                        45.000,00             90.000,00
+================================================================================
+
+Subtotal (gravado):                                    525.000,00
+IVA 21%:                                               110.250,00
+                                                            TOTAL $           635.250,00
+================================================================================
+
+[FISCAL]
+CAE:          60808937116824
+Vencimiento:  15/01/2027
+Codigo Barras: 3071234567000010608089371168
+
+ORIGINAL BLANCO - DUPLICADO COLOR
+
+--------------------------------------------------------------------------------
+Impreso por C5 Digital S.A. - C.U.I.T. 30-71097277-6 Exp. 421836/2010
+Fecha de Imp. Diciembre 2016 - Imp. del 0001-0000001 al 0001-0000100
+www.c5imprenta.com.ar - 4522-0600 lineas rotativas.
+--------------------------------------------------------------------------------
+
+              147 "Telefono Gratuito CABA, Area de Defensa
+                       y Proteccion al Consumidor".

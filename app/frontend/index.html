@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InvoiceFlow — Back Office</title>
+    <link rel="stylesheet" href="/static/style.css?v=2026070912">
+</head>
+<body>
+    <!-- ============================================================ -->
+    <!-- APP CONTAINER                                              -->
+    <!-- ============================================================ -->
+    <div class="app-container">
+        
+        <!-- Header global -->
+        <header class="app-header">
+            <div class="header-brand">
+                <span class="header-logo">📋</span>
+                <div class="header-title">
+                    <h1>InvoiceFlow</h1>
+                    <span class="header-subtitle">Back Office</span>
+                </div>
+            </div>
+            
+            <!-- Indicador de estado de agentes -->
+            <div class="header-agents" id="agents-status">
+                <span class="agents-indicator loading">🔄</span>
+                <span class="agents-text">Verificando servicios...</span>
+            </div>
+            
+            <div class="header-user">
+                <span class="user-name">Operador</span>
+                <button class="btn-logout" title="Cerrar sesión">🚪</button>
+            </div>
+        </header>
+
+        <div class="app-body">
+            <!-- Sidebar de navegación -->
+            <nav class="sidebar" id="sidebar">
+                <ul class="sidebar-nav">
+                    <li class="sidebar-item active" data-page="dashboard">
+                        <span class="sidebar-icon">📊</span>
+                        <span class="sidebar-text">Dashboard</span>
+                    </li>
+                    <li class="sidebar-item" data-page="inbox">
+                        <span class="sidebar-icon">📥</span>
+                        <span class="sidebar-text">Inbox</span>
+                    </li>
+                    <li class="sidebar-item" data-page="historial">
+                        <span class="sidebar-icon">📜</span>
+                        <span class="sidebar-text">Historial</span>
+                    </li>
+                    <li class="sidebar-item" data-page="chat">
+                        <span class="sidebar-icon">💬</span>
+                        <span class="sidebar-text">Asistente IA</span>
+                    </li>
+                    <li class="sidebar-item" data-page="proveedores">
+                        <span class="sidebar-icon">🏢</span>
+                        <span class="sidebar-text">Proveedores</span>
+                    </li>
+                    <li class="sidebar-item" data-page="observabilidad">
+                        <span class="sidebar-icon">📡</span>
+                        <span class="sidebar-text">Estado de Agentes</span>
+                    </li>
+                    <li class="sidebar-item" data-page="evaluacion">
+                        <span class="sidebar-icon">✅</span>
+                        <span class="sidebar-text">Evaluación</span>
+                    </li>
+                    <li class="sidebar-item" data-page="docs">
+                        <span class="sidebar-icon">📖</span>
+                        <span class="sidebar-text">Docs</span>
+                    </li>
+                </ul>
+            </nav>
+
+            <!-- Contenido principal -->
+            <main class="main-content">
+                
+                <!-- ============================================================ -->
+                <!-- DASHBOARD                                                    -->
+                <!-- ============================================================ -->
+                <div class="page active" id="page-dashboard">
+                    <h2 class="page-title">Dashboard</h2>
+                    
+                    <!-- Cards de estado -->
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">📥 En Inbox</div>
+                            <div class="stat-value" id="stat-inbox">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">✅ Aprobadas</div>
+                            <div class="stat-value approved" id="stat-approved">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">⏫ Escaladas</div>
+                            <div class="stat-value escalated" id="stat-escalated">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">❌ Rechazadas</div>
+                            <div class="stat-value rejected" id="stat-rejected">—</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">💰 Total Aprobado</div>
+                            <div class="stat-value" id="stat-total">—</div>
+                        </div>
+                    </div>
+
+                    <!-- Filtro -->
+                    <div class="filter-bar">
+                        <select id="dashboard-year" class="filter-select">
+                            <option value="">Todos los años</option>
+                            <option value="2026">2026</option>
+                            <option value="2025">2025</option>
+                        </select>
+                        <select id="dashboard-month" class="filter-select">
+                            <option value="">Todos los meses</option>
+                            <option value="01">Enero</option>
+                            <option value="06">Junio</option>
+                        </select>
+                    </div>
+
+                    <!-- Últimos pagos procesados -->
+                    <h3 class="section-title">Últimos pagos procesados</h3>
+                    <div class="table-wrap">
+                        <table id="recent-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Factura</th>
+                                    <th>Proveedor</th>
+                                    <th>Monto</th>
+                                    <th>Decisión</th>
+                                    <th>Comprobante</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recent-tbody">
+                                <tr><td colspan="6">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- INBOX                                                        -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-inbox">
+                    <h2 class="page-title">Inbox — Drop Folder</h2>
+                    <p class="page-hint">
+                        📁 Las facturas que lleguen al sistema se depositan acá.
+                        También podés subirlas manualmente:
+                    </p>
+
+                    <div class="upload-area" id="inbox-upload">
+                        <input type="file" id="inbox-file" accept=".json,.txt" hidden>
+                        <span class="upload-icon">📄</span>
+                        <span class="upload-text">Arrastrá archivos o hacé click</span>
+                        <span class="upload-hint">JSON o TXT</span>
+                    </div>
+
+                    <div class="action-bar">
+                        <button class="btn-primary" id="btn-process-all">▶️ Procesar todo</button>
+                        <button class="btn-secondary" id="btn-refresh">🔄 Refrescar</button>
+                        <button class="btn-secondary" id="btn-group">📁 Agrupar facturas</button>
+                    </div>
+
+                    <h3 class="section-title">Facturas pendientes</h3>
+                    <div class="table-wrap">
+                        <table id="inbox-table">
+                            <thead>
+                                <tr>
+                                    <th>Archivo</th>
+                                    <th>Factura</th>
+                                    <th>Proveedor</th>
+                                    <th>Fecha emisión</th>
+                                    <th>Monto</th>
+                                    <th>Tamaño</th>
+                                    <th>Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody id="inbox-tbody">
+                                <tr><td colspan="7">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- HISTORIAL                                                    -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-historial">
+                    <h2 class="page-title">Historial de pagos</h2>
+                    
+                    <div class="filter-bar">
+                        <input type="text" id="hist-supplier" class="filter-input" placeholder="Proveedor">
+                        <select id="hist-year" class="filter-select">
+                            <option value="">Todos los años</option>
+                            <option value="2026">2026</option>
+                        </select>
+                        <select id="hist-status" class="filter-select">
+                            <option value="">Todos los estados</option>
+                            <option value="APPROVED">Aprobada</option>
+                            <option value="REJECTED">Rechazada</option>
+                            <option value="ESCALATED">Escalada</option>
+                        </select>
+                        <button class="btn-secondary" id="btn-hist-filter">Filtrar</button>
+                    </div>
+
+                    <div class="table-wrap">
+                        <table id="history-table">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Factura</th>
+                                    <th>Proveedor</th>
+                                    <th>Monto</th>
+                                    <th>Decisión</th>
+                                    <th>Confirmación</th>
+                                    <th>Estado</th>
+                                    <th>Motivo</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-tbody">
+                                <tr><td colspan="8">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- CHAT INTERNO (Asistente IA) - FIX BUG-019                   -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-chat">
+                    <h2 class="page-title">🤖 Asistente IA — GI</h2>
+                    <p class="page-hint">
+                        Tu Asistente Inteligente GI. Canal para procesar facturas conversacionalmente y consultar el sistema.
+                    </p>
+
+                    <div class="chat-container">
+                        <div class="chat-messages" id="internal-chat-messages">
+                            <!-- FIX BUG-019: el mensaje de bienvenida se inyecta via JS al cargar -->
+                        </div>
+
+                        <div class="chat-input-container">
+                            <input type="text" id="internal-chat-input" placeholder="Escribí tu instrucción…">
+                            <button id="internal-chat-send" class="btn-primary">Enviar</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- ESTADO DE AGENTES (Observabilidad)                          -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-observabilidad">
+                    <h2 class="page-title">📡 Estado de Agentes</h2>
+                    <p class="page-hint">Monitoreo de servicios y agentes del sistema.</p>
+
+                    <div class="agents-grid" id="agents-grid">
+                        <!-- Generado dinámicamente por loadAgentsStatus() -->
+                        <div class="agent-card" style="grid-column: 1 / -1; text-align: center; padding: 32px;">
+                            <span style="color: #888;">Cargando estado de agentes…</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- EVALUACIÓN                                                   -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-evaluacion">
+                    <h2 class="page-title">✅ Evaluación — LLM-as-a-Judge</h2>
+                    <p class="page-hint">Resultados de la última corrida de evaluación.</p>
+
+                    <div class="eval-summary">
+                        <div class="eval-card">
+                            <div class="eval-label">Casos totales</div>
+                            <div class="eval-value">20</div>
+                        </div>
+                        <div class="eval-card success">
+                            <div class="eval-label">✅ Pasaron</div>
+                            <div class="eval-value">18</div>
+                        </div>
+                        <div class="eval-card danger">
+                            <div class="eval-label">❌ Fallaron</div>
+                            <div class="eval-value">2</div>
+                        </div>
+                        <div class="eval-card">
+                            <div class="eval-label">Accuracy</div>
+                            <div class="eval-value">90%</div>
+                        </div>
+                    </div>
+
+                    <h3 class="section-title">Detalle de casos</h3>
+                    <div class="table-wrap">
+                        <table id="eval-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Categoría</th>
+                                    <th>Descripción</th>
+                                    <th>Resultado</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="eval-tbody">
+                                <tr><td colspan="5">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- PROVEEDORES (ABM) - FIX BUG-016                              -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-proveedores">
+                    <h2 class="page-title">🏢 ABM de Proveedores</h2>
+                    <p class="page-hint">Gestión completa de proveedores y sus contratos.</p>
+
+                    <div class="action-bar">
+                        <button class="btn-primary" id="btn-new-supplier">➕ Nuevo Proveedor</button>
+                        <button class="btn-secondary" id="btn-refresh-suppliers">🔄 Refrescar</button>
+                        <input type="text" id="supplier-search" class="filter-input" placeholder="Buscar por nombre o CUIT..." style="margin-left: auto; min-width: 280px;">
+                    </div>
+
+                    <div class="table-wrap">
+                        <table id="suppliers-table">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Razón Social</th>
+                                    <th>CUIT</th>
+                                    <th>Categoría</th>
+                                    <th>Email</th>
+                                    <th>Teléfono</th>
+                                    <th>Contrato</th>
+                                    <th>Modo</th>
+                                    <th>Límite</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="suppliers-tbody">
+                                <tr><td colspan="11">Cargando…</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- ============================================================ -->
+                <!-- DOCS                                                         -->
+                <!-- ============================================================ -->
+                <div class="page" id="page-docs">
+                    <h2 class="page-title">📖 Documentación</h2>
+                    
+                    <div class="docs-section">
+                        <h3>Cómo usar InvoiceFlow</h3>
+                        <h4>3 formas de procesar facturas</h4>
+                        <ol>
+                            <li><strong>Automática (watcher):</strong> Copiá archivos en <code>platform/data/inbox/</code></li>
+                            <li><strong>Manual por chat:</strong> Escribí en el chat interno <em>"procesá todo el inbox"</em></li>
+                            <li><strong>Manual por UI:</strong> Andá a la pestaña Inbox y procesá manualmente</li>
+                        </ol>
+
+                        <h4>Formatos aceptados</h4>
+                        <pre><code>{
+  "invoice_id": "INV-2024-001",
+  "supplier_id": "SUP001",
+  "supplier_name": "TechCorp SA",
+  "amount": 50000,
+  "currency": "ARS",
+  "invoice_date": "2025-06-01"
+}</code></pre>
+
+                        <h4>Endpoints API</h4>
+                        <ul>
+                            <li><code>GET /health</code> — Estado de microservicios</li>
+                            <li><code>GET /inbox</code> — Lista facturas en inbox</li>
+                            <li><code>POST /inbox/upload</code> — Sube factura</li>
+                            <li><code>POST /inbox/process/&lt;filename&gt;</code> — Procesa una</li>
+                            <li><code>GET /invoices</code> — Historial</li>
+                            <li><code>GET /dashboard</code> — Stats</li>
+                            <li><code>POST /chat</code> — Chat-driven</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+        <!-- Footer global -->
+        <footer class="app-footer">
+            <div class="footer-info">
+                <span>InvoiceFlow v1.0.0</span>
+                <span class="separator">|</span>
+                <span>Ambiente: dev</span>
+                <span class="separator">|</span>
+                <a href="/docs" target="_blank">Documentación técnica</a>
+            </div>
+        </footer>
+    </div>
+
+    <script src="/static/app.js?v=2026070912"></script>
+</body>
+</html>

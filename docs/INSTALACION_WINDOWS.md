@@ -1,199 +1,213 @@
 # InvoiceFlow — Guía de Instalación para Windows
 
-## 📋 Requisitos Previos
+## Tabla de Contenidos
+
+1. [Requisitos Previos](#1-requisitos-previos)
+2. [Instalación Paso a Paso](#2-instalación-paso-a-paso)
+3. [Inicio del Sistema](#3-inicio-del-sistema)
+4. [Acceso y Verificación](#4-acceso-y-verificación)
+5. [Solución de Problemas](#5-solución-de-problemas)
+6. [Estructura de Archivos](#6-estructura-de-archivos)
+
+---
+
+## 1. Requisitos Previos
 
 ### Software Necesario
-1. **Python 3.12+** — [Descargar aquí](https://www.python.org/downloads/windows/)
-2. **Git** (opcional) — [Descargar aquí](https://git-scm.com/download/win)
+
+| Software | Versión Mínima | Descarga |
+|----------|---------------|----------|
+| **Python** | 3.12+ | [python.org](https://www.python.org/downloads/windows/) |
+| **Git** | 2.0+ (opcional) | [git-scm.com](https://git-scm.com/download/win) |
+
+### Verificar Python
+
+1. Abrir Command Prompt o PowerShell
+2. Escribir:
+```bash
+python --version
+```
+3. Debería mostrar: `Python 3.12.x`
 
 ---
 
-## 🚀 Instalación Paso a Paso
+## 2. Instalación Paso a Paso
 
-### Paso 1: Descargar e Instalar Python
+### Paso 1: Instalar Python
 
-1. **Abrí tu navegador** y visitá: [https://www.python.org/downloads/windows/](https://www.python.org/downloads/windows/)
+1. **Descargar** Python desde [python.org/downloads/windows/](https://www.python.org/downloads/windows/)
 
-2. **Hacé clic** en el botón **"Download Python 3.12.x"** (o la versión más reciente)
+2. **Ejecutar** el instalador (`python-3.12.x-amd64.exe`)
 
-3. **Ejecutá el archivo descargado** (ejemplo: `python-3.12.x-amd64.exe`)
+3. **IMPORTANTE**: Antes de instalar, marcar:
+```
+☑ Add Python to PATH
+```
 
-4. **IMPORTANTE**: Antes de hacer clic en "Install Now", marcá la opción:
-   ```
-   ☑ Add Python to PATH
-   ```
+4. **Instalar** clicking "Install Now"
 
-5. **Hacé clic** en "Install Now"
-
-6. **Esperá** a que termine la instalación (puede tardar 2-3 minutos)
-
-7. **Verificá** la instalación:
-   - Abrí el menú Inicio
-   - Buscá "cmd" o "PowerShell"
-   - Escribí:
-   ```
-   python --version
-   ```
-   - Debería mostrar: `Python 3.12.x`
-
----
+5. **Verificar** en CMD:
+```bash
+python --version
+```
 
 ### Paso 2: Descargar el Proyecto
 
-#### Opción A: Descargar ZIP (más fácil)
+#### Opción A: Descargar ZIP (Recomendado para principiantes)
 
-1. **Ir a GitHub**: [https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
+1. Ir a [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
 
-2. **Hacer clic** en el botón verde **"<> Code"**
+2. Click en botón verde **"<> Code"**
 
-3. **Hacer clic** en **"Download ZIP"**
+3. Click en **"Download ZIP"**
 
-4. **Guardar** el archivo en el Escritorio
+4. Guardar en Escritorio
 
 5. **Extraer** el ZIP:
-   - Clic derecho en el archivo `.zip`
-   - "Extraer todo..."
-   - Elegí el Escritorio como destino
+   - Click derecho → "Extraer todo..."
+   - Elegir destino: Escritorio
 
-6. **Renombrar** la carpeta a: `invoice_approval_system`
+6. **Renombrar** carpeta a: `invoice_approval_system`
 
 #### Opción B: Clonar con Git
 
-1. **Abrir** PowerShell o Git Bash
+```bash
+cd Desktop
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
+```
 
-2. **Navegar** al escritorio:
-   ```
-   cd Desktop
-   ```
+### Paso 3: Crear Entorno Virtual
 
-3. **Clonar** el repositorio:
-   ```
-   git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
-   ```
+1. **Abrir** PowerShell o CMD en la carpeta del proyecto:
+```bash
+cd Desktop\tp_multiagentes\invoice_approval_system
+```
+
+2. **Crear** entorno virtual:
+```bash
+python -m venv .venv
+```
+
+3. **Activar** el entorno:
+```bash
+.venv\Scripts\activate
+```
+
+> ✅ Verás `(.venv)` al inicio de la línea
+
+### Paso 4: Instalar Dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+> ⏳ Puede tardar 3-5 minutos
+
+### Paso 5: Configurar Variables de Entorno
+
+```bash
+# Copiar plantilla
+copy .env.example .env
+
+# Editar con bloc de notas
+notepad .env
+```
+
+Agregar tu API Key de Google:
+```env
+GOOGLE_API_KEY=tu_api_key_aqui
+```
+
+### Paso 6: Indexar Contratos (Primera vez)
+
+```bash
+python rag/ingest.py
+```
 
 ---
 
-### Paso 3: Abrir la Carpeta del Proyecto
+## 3. Inicio del Sistema
+
+### Método Automático (Recomendado)
 
 1. **Abrir** el Explorador de Archivos
+2. **Navegar** a la carpeta del proyecto
+3. **Doble clic** en `INICIAR.bat`
+4. **Esperar** a que se abran 3 ventanas de terminal
 
-2. **Navegar** a la carpeta del proyecto:
-   ```
-   Desktop/invoice_approval_system
-   ```
+### Método Manual (3 terminales)
 
-3. **Verificar** que contiene archivos como:
-   - `README.md`
-   - `requirements.txt`
-   - `INICIAR.bat`
+#### Terminal 1 — Supplier Service (Puerto 8001)
 
----
+```bash
+cd Desktop\invoice_approval_system
+.venv\Scripts\activate
+python -m platform.services.supplier_service.main
+```
 
-### Paso 4: Instalar las Dependencias
+#### Terminal 2 — Contract Service (Puerto 8002)
 
-1. **Abrir** PowerShell o Terminal:
-   - Presioná `Win + X`
-   - Seleccioná "Terminal de Windows" o "PowerShell"
+```bash
+cd Desktop\invoice_approval_system
+.venv\Scripts\activate
+python -m platform.services.contract_service.main
+```
 
-2. **Navegar** a la carpeta del proyecto:
-   ```
-   cd Desktop/invoice_approval_system
-   ```
+#### Terminal 3 — Backend (Puerto 8000)
 
-3. **Crear un entorno virtual** (recomendado):
-   ```
-   python -m venv .venv
-   ```
-
-4. **Activar** el entorno virtual:
-   ```
-   .venv\Scripts\activate
-   ```
-
-5. **Instalar dependencias**:
-   ```
-   pip install -r requirements.txt
-   ```
-
-   > ⚠️ Esto puede tardar 3-5 minutos
+```bash
+cd Desktop\invoice_approval_system\platform\backend
+.venv\Scripts\activate
+python main.py
+```
 
 ---
 
-### Paso 5: Iniciar el Sistema
+## 4. Acceso y Verificación
 
-#### Método Automático (Recomendado para principiantes)
+### URLs del Sistema
 
-1. **En el Explorador de Archivos**, navegar a la carpeta del proyecto
+| Servicio | URL | Verificación |
+|----------|-----|--------------|
+| **Back Office** | http://localhost:8000/ | Página principal de administración |
+| **Supplier Portal** | http://localhost:8000/supplier/ | Portal del proveedor |
+| **API Backend** | http://localhost:8000/docs | Documentación Swagger |
+| **API Supplier** | http://localhost:8001/docs | API de proveedores |
+| **API Contract** | http://localhost:8002/docs | API de contratos |
 
-2. **Doble clic** en el archivo `INICIAR.bat`
+### Health Checks
 
-3. **Se abrirán 3 ventanas** de terminal con los servicios
+```bash
+# Verificar servicios
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+```
 
-4. **Esperar** hasta ver mensajes como:
-   ```
-   [backend] Iniciando InvoiceFlow backend en puerto 8000
-   ```
-
-#### Método Manual
-
-1. **Abrir** 3 terminales separadas (PowerShell)
-
-2. **En la Terminal 1** — Supplier Service:
-   ```
-   cd Desktop/invoice_approval_system
-   .venv\Scripts\activate
-   python -m platform.services.supplier_service.main
-   ```
-
-3. **En la Terminal 2** — Contract Service:
-   ```
-   cd Desktop/invoice_approval_system
-   .venv\Scripts\activate
-   python -m platform.services.contract_service.main
-   ```
-
-4. **En la Terminal 3** — Backend:
-   ```
-   cd Desktop/invoice_approval_system\platform\backend
-   .venv\Scripts\activate
-   python main.py
-   ```
-
----
-
-## 🌐 Acceso al Sistema
-
-Una vez iniciado, abrir el navegador y visitar:
-
-| Servicio | URL |
-|----------|-----|
-| **Back Office** | [http://localhost:8000/](http://localhost:8000/) |
-| **Portal del Proveedor** | [http://localhost:8000/supplier/](http://localhost:8000/supplier/) |
-| **Documentación API (Backend)** | [http://localhost:8001/docs](http://localhost:8001/docs) |
-| **Documentación API (Contracts)** | [http://localhost:8002/docs](http://localhost:8002/docs) |
-
----
-
-## 🧪 Probar el Sistema
+Respuesta esperada:
+```json
+{"status": "ok", "service": "..."}
+```
 
 ### Login como Proveedor
 
-1. Abrir [http://localhost:8000/supplier/](http://localhost:8000/supplier/)
+1. Abrir http://localhost:8000/supplier/
 
-2. Ingresar uno de estos IDs:
-   ```
-   SUP001
-   SUP002
-   SUP003
-   SUP004
-   SUP005
-   ```
+2. Ingresar ID de prueba:
 
-3. Hacer clic en "Ingresar"
+| ID | Nombre | Estado |
+|----|--------|--------|
+| SUP001 | TechCorp SA | ACTIVE |
+| SUP002 | Papeleria Norte SRL | ACTIVE |
+| SUP003 | Servicios Rapidos SA | INACTIVE |
+| SUP004 | Limpieza Total SRL | ACTIVE |
+| SUP005 | Consultoria Digital SA | ACTIVE |
+
+3. Click en "Ingresar"
 
 ---
 
-## 🔧 Solución de Problemas
+## 5. Solución de Problemas
 
 ### Error: "Python no encontrado"
 
@@ -202,25 +216,31 @@ Una vez iniciado, abrir el navegador y visitar:
 ```
 
 **Solución**:
-1. Cerrar y reabrir la terminal
-2. Si no funciona, reiniciar la PC
-3. Verificar que Python esté en PATH
+1. Cerrar y reabrir terminal
+2. Reiniciar PC
+3. Si persiste, desinstalar y reinstallar Python marcando "Add to PATH"
 
 ---
 
-### Error: "Port already in use"
+### Error: "Port already in use" (Error 10048)
 
 ```
 OSError: [WinError 10048]
 ```
 
 **Solución**:
-1. Cerrar otras aplicaciones que usen puertos (8000, 8001, 8002)
-2. O ejecutar en CMD como administrador:
-   ```
-   netstat -ano | findstr :8000
-   taskkill /PID <NUMERO> /F
-   ```
+```bash
+# Identificar proceso
+netstat -ano | findstr :8000
+
+# Matar proceso (ejemplo: PID 1234)
+taskkill /PID 1234 /F
+```
+
+Para todos los puertos:
+```bash
+taskkill /F /IM python.exe
+```
 
 ---
 
@@ -231,55 +251,139 @@ OSError: [WinError 10048]
 ```
 
 **Solución**:
-1. Usar `python -m pip` en vez de `pip`:
-   ```
-   python -m pip install -r requirements.txt
-   ```
+```bash
+python -m pip install -r requirements.txt
+```
+
+---
+
+### Error: "ModuleNotFoundError"
+
+```
+ModuleNotFoundError: No module named '...'
+```
+
+**Solución**:
+```bash
+# Asegurarse que el entorno virtual está activo
+.venv\Scripts\activate
+
+# Reinstalar dependencias
+pip install --force-reinstall -r requirements.txt
+```
 
 ---
 
 ### Las ventanas se cierran inmediatamente
 
 **Solución**:
-1. Abrir PowerShell
-2. Ejecutar manualmente para ver el error:
-   ```
-   cd Desktop/invoice_approval_system
-   python -m platform.backend.main
-   ```
+1. Abrir PowerShell manualmente
+2. Ejecutar comando para ver error:
+```bash
+cd Desktop\invoice_approval_system
+.venv\Scripts\activate
+python -m platform.services.supplier_service.main
+```
 
 ---
 
-## 📁 Estructura de Archivos
+### Error de Encoding (tildes)
 
-Después de instalar, deberías ver esta estructura:
+```
+UnicodeEncodeError: 'charmap' codec
+```
+
+**Solución**:
+Agregar al inicio de scripts `.bat`:
+```batch
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
+```
+
+---
+
+## 6. Estructura de Archivos
 
 ```
 invoice_approval_system/
-├── README.md              ← Este archivo
-├── requirements.txt       ← Dependencias de Python
-├── INICIAR.bat          ← Script para iniciar (doble clic)
-├── platform/
-│   ├── backend/         ← Servidor principal (puerto 8000)
-│   ├── frontend/       ← Interfaz del Back Office
-│   └── services/       ← Microservicios
-├── supplier_portal/    ← Portal del proveedor
-├── agents/             ← Agentes del sistema
-├── tools/              ← Herramientas
-├── guardrails/         ← Reglas de validación
-└── data/               ← Base de datos
+├── README.md                   # Documentación principal
+├── CHANGELOG.md               # Historial de cambios
+├── requirements.txt           # Dependencias Python
+│
+├── INICIAR.bat               # Script de inicio automático
+├── setup.bat                 # Script de instalación
+├── smoke_test.bat            # Verificación de componentes
+│
+├── platform/                  # Backend y servicios
+│   ├── backend/              # Servidor principal (8000)
+│   │   └── main.py
+│   ├── frontend/            # Back Office
+│   └── services/            # Microservicios
+│       ├── supplier_service/
+│       └── contract_service/
+│
+├── agents/                   # Agentes ADK
+│   ├── orchestrator.py
+│   ├── validator_agent.py
+│   ├── contract_agent.py
+│   ├── payment_agent.py
+│   ├── router_agent.py
+│   └── invoice_manager_agent.py
+│
+├── tools/                   # Herramientas
+│   ├── supplier_mcp_tool.py
+│   ├── rag_tool.py
+│   ├── payment_db_tool.py
+│   └── ...
+│
+├── guardrails/             # Sistema de guardrails
+│   ├── rules.yaml
+│   └── guardrail_engine.py
+│
+├── rag/                    # RAG (ChromaDB)
+│   ├── ingest.py
+│   └── retriever.py
+│
+├── ml/                     # Machine Learning
+│   └── risk_model.py
+│
+├── supplier_portal/        # Portal del proveedor
+│   ├── index.html
+│   ├── app.js
+│   └── style.css
+│
+├── a2a/                    # Agente A2A externo
+│   └── external_auditor_agent/
+│
+├── data/                   # Datos persistentes
+│   ├── payments.db         # SQLite (auto-generado)
+│   ├── chroma_db/         # Vector store (auto-generado)
+│   ├── contracts/         # Contratos .txt
+│   └── new_invoices/      # Facturas pendientes
+│
+└── docs/                   # Documentación adicional
+    ├── especificacion_sistema_invoiceflow.md
+    ├── documento_guardrails_invoiceflow.md
+    ├── GUIA_RAPIDA.md
+    ├── INSTALACION_WINDOWS.md
+    ├── INSTALACION_LINUX.md
+    └── INSTALACION_MACOS.md
 ```
 
 ---
 
 ## 🛑 Detener el Sistema
 
-1. **Cerrar** las 3 ventanas de terminal
+### Método 1: Cerrar ventanas
+Cerrar las 3 ventanas de terminal
 
-O ejecutar:
-```
+### Método 2: Matar procesos
+```bash
 taskkill /F /IM python.exe
 ```
+
+### Método 3: Script incluido
+Ejecutar `stop_all.bat` en la carpeta del proyecto
 
 ---
 
@@ -288,20 +392,33 @@ taskkill /F /IM python.exe
 Antes de reportar problemas, verificar:
 
 - [ ] Python 3.12+ instalado (`python --version`)
-- [ ] Entorno virtual activado (`.venv\Scripts\activate`)
+- [ ] Entorno virtual activado (`(.venv)` visible)
 - [ ] Dependencias instaladas (`pip list`)
-- [ ] 3 terminales corriendo (o 1 con `INICIAR.bat`)
-- [ ] Navegador abierto en `http://localhost:8000/`
+- [ ] Archivo `.env` creado con `GOOGLE_API_KEY`
+- [ ] 3 terminales corriendo
+- [ ] Navegador en `http://localhost:8000/`
 
 ---
 
 ## 📞 Necesitas Ayuda?
 
-1. **Revisar** la sección de [Solución de Problemas](#-solución-de-problemas)
-2. **Verificar** que cumples todos los [requisitos previos](#-requisitos-previos)
-3. **Revisar** el archivo [CHANGELOG.md](CHANGELOG.md) para cambios recientes
+1. Revisar la sección de [Solución de Problemas](#5-solución-de-problemas)
+2. Verificar que cumples todos los requisitos
+3. Revisar logs en las terminales para identificar errores
+4. Consultar [README.md](../README.md) para documentación completa
 
 ---
 
-**Última actualización**: 2025
-**Versión del sistema**: 1.0.0
+## Enlaces Útiles
+
+| Recurso | URL |
+|---------|-----|
+| Repositorio GitHub | https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque |
+| Documentación ADK | https://google.github.io/adk-docs/ |
+| API Gemini | https://ai.google.dev/ |
+| FastAPI | https://fastapi.tiangolo.com/ |
+
+---
+
+**Versión del sistema**: 1.0.0  
+**Última actualización**: 2025-06-20

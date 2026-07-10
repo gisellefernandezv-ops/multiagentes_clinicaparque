@@ -1,4 +1,9 @@
-# Resumen de Implementación — InvoiceFlow
+# Resumen de Implementación — InvoiceFlow v2.0.0
+
+> **Última actualización**: 2026-07-15  
+> **Estado**: ✅ Sistema Validado (60/60 checks PASS)
+
+---
 
 ## 📋 Documentación Base
 - `docs/especificacion_sistema_invoiceflow.md` — Especificación técnica completa

@@ -1,0 +1,56 @@
+================================================================================
+                            [FACTURA B]
+================================================================================
+
+[EMISOR]
+Razon Social:    Limpieza Total SRL
+Rubro/Matricula: Servicios de limpieza
+Direccion:       Av. Rivadavia 8500, CABA
+CUIT:            30-70555666-7
+Ing. Brutos:     901-555666-7
+Inicio Act.:     02/2018
+Condicion IVA:   IVA Responsable Inscripto
+
+================================================================================
+CODIGO Nº 06                          FACTURA B
+                                       Nº 0001 - 00000015
+FECHA: 28/06/2026
+================================================================================
+
+[RECEPTOR]
+Señor/es:     EMPRESA DEMO SA
+Dirección:    Av. Corrientes 1234, Piso 5
+Localidad:    CABA (1414)
+CUIT:         30-12345678-9
+Condicion IVA: IVA Responsable Inscripto
+
+Condiciones de Venta: Contado    [X]
+                      Cta. Cte.   [ ]
+
+Remito Nº:    -
+
+================================================================================
+CANT.  DESCRIPCION                                 P. UNITARIO         IMPORTE
+================================================================================
+   3   Suministro productos de limpieza                     8.000,00             24.000,00
+   1   Limpieza profunda eventual                          25.000,00             25.000,00
+================================================================================
+
+                                                            TOTAL $            49.000,00
+================================================================================
+
+[FISCAL]
+CAE:          59318387746666
+Vencimiento:  15/01/2027
+Codigo Barras: 3070555666700010593183877466
+
+ORIGINAL BLANCO - DUPLICADO COLOR
+
+--------------------------------------------------------------------------------
+Impreso por C5 Digital S.A. - C.U.I.T. 30-71097277-6 Exp. 421836/2010
+Fecha de Imp. Diciembre 2016 - Imp. del 0001-0000001 al 0001-0000100
+www.c5imprenta.com.ar - 4522-0600 lineas rotativas.
+--------------------------------------------------------------------------------
+
+              147 "Telefono Gratuito CABA, Area de Defensa
+                       y Proteccion al Consumidor".

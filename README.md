@@ -1,528 +1,558 @@
-# Sistema Multiagente de Aprobación de Facturas
+# InvoiceFlow — Sistema Multiagente de Aprobación de Facturas
 
-> Trabajo Práctico — Sistemas Multiagentes (Universidad de Palermo)
-> Estado: ✅ operativo · ADK Web UI corriendo en `http://localhost:8000`
-
----
-
-## Tabla de contenidos
-
-1. [1. Descripción del proyecto](#1-descripción-del-proyecto)
-2. [2. Stack tecnológico y justificación](#2-stack-tecnológico-y-justificación)
-3. [3. Arquitectura del sistema](#3-arquitectura-del-sistema)
-4. [4. Flujo implementado paso a paso](#4-flujo-implementado-paso-a-paso)
-5. [5. Estructura de carpetas](#5-estructura-de-carpetas)
-6. [6. Instalación](#6-instalación)
-7. [7. Ejecución (UI y smoke tests)](#7-ejecución-ui-y-smoke-tests)
-8. [8. Ejemplos de uso](#8-ejemplos-de-uso)
-9. [9. Evaluación (golden cases + métricas)](#9-evaluación-golden-cases--métricas)
-10. [10. Troubleshooting / Fixes aplicados](#10-troubleshooting--fixes-aplicados)
-11. [11. Notas técnicas y decisiones de diseño](#11-notas-técnicas-y-decisiones-de-diseño)
-
-> Para instrucciones de instalación detalladas ver [`INSTALL.md`](INSTALL.md).
-> Para el historial de cambios ver [`CHANGELOG.md`](CHANGELOG.md).
+> **Trabajo Práctico — Sistemas Multiagentes** | Universidad de Palermo
+>
+> **Estado**: ✅ Operativo | **Versión**: 2.0.0 (con Asistente IA)
+>
+> 🔗 **Repositorio**: [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
 
 ---
 
-## 1. Descripción del proyecto
+## 📑 Tabla de Contenidos
 
-Sistema multiagente construido con **Google ADK (Agent Development Kit)** que
-automatiza el proceso de aprobación de facturas de proveedores. Recibe una
-factura en formato JSON, valida que el proveedor exista y esté activo, verifica
-que el monto esté dentro del límite contractual (vía **RAG sobre ChromaDB**),
-y registra el resultado en **SQLite** para auditoría.
-
-### 1.1. Agentes del sistema
-
-| Agente | Tipo | Responsabilidad |
-|---|---|---|
-| **Orquestador** (`invoice_orchestrator`) | LlmAgent (root) | Coordina el flujo secuencial y aplica el guardrail final. |
-| **Validador** (`validator_agent`) | LlmAgent (sub) | Consulta el proveedor en un servicio MCP mock. |
-| **Contrato** (`contract_agent`) | LlmAgent (sub) | Busca el contrato vigente (RAG) y compara el monto. |
-| **Pagos** (`payment_agent`) | LlmAgent (sub) | Persiste el resultado en SQLite. |
-
-### 1.2. State compartido entre agentes
-
-El orquestador y los sub-agentes se comunican a través del `session.state`
-nativo de ADK (patrón de blackboard):
-
-```
-invoice_id, supplier_id, supplier_name, amount, currency, invoice_date,
-validation_status, contract_status, contract_limit, payment_status,
-confirmation_id, registered_at, decision, rejection_reason,
-guardrail_action, guardrail_reason
-```
-
-Cada sub-agente declara `output_key="<nombre>"` y ADK se encarga de escribir
-su respuesta en el state bajo esa clave. El orquestador luego lo lee sin
-tener que negociar protocolos.
-
-### 1.3. Guardrail estructural
-
-Antes de la decisión final del orquestador se aplica un guardrail determinístico
-(`guardrails/invoice_guardrail.py`):
-
-- Monto > $500.000 → `ESCALATED` (revisión humana obligatoria)
-- Monto ≤ 0 → `REJECTED`
-- Datos incompletos → `REJECTED`
-- Fecha mal formada (`≠ YYYY-MM-DD`) → `REJECTED`
-- `supplier_id` con caracteres inválidos → `REJECTED`
-
-**Justificación de la elección**: un guardrail *estructural* (basado en
-validación de schema + reglas duras) es **determinístico, reproducible y
-explicable**, a diferencia de un guardrail puramente semántico que dependa
-del LLM. Lo usamos como *primera línea de defensa* para filtrar inputs
-malformados antes de gastar tokens en el orquestador.
+1. [Descripción del Proyecto](#1-descripción-del-proyecto)
+2. [Arquitectura del Sistema](#2-arquitectura-del-sistema)
+3. [Stack Tecnológico](#3-stack-tecnológico)
+4. [Agentes Implementados](#4-agentes-implementados)
+5. [Flujo de Negocio](#5-flujo-de-negocio)
+6. [Estructura de Carpetas](#6-estructura-de-carpetas)
+7. [Instalación Rápida](#7-instalación-rápida)
+8. [Ejecución del Sistema](#8-ejecución-del-sistema)
+9. [Ejemplos de Uso](#9-ejemplos-de-uso)
+10. [Evaluación y Testing](#10-evaluación-y-testing)
+11. [Troubleshooting](#11-troubleshooting)
+12. [API Reference](#12-api-reference)
+13. [Licencia y Créditos](#13-licencia-y-créditos)
 
 ---
 
-## 2. Stack tecnológico y justificación
+## 1. Descripción del Proyecto
 
-### 2.1. Tabla resumen
+**InvoiceFlow** es un sistema multiagente que automatiza el proceso de aprobación de facturas de proveedores mediante inteligencia artificial.
 
-| Capa | Tecnología | Versión | Justificación |
-|---|---|---|---|
-| **Framework de agentes** | `google-adk` | 2.3.0 | Pedido por la consigna. ADK provee `LlmAgent`, `Runner`, `SessionService`, `ToolContext`, transfer-to-agent y `output_key` out-of-the-box. |
-| **LLM** | `gemini-2.0-flash-latest` | última | Pedido por la consigna. Balance ideal entre latencia, costo y razonamiento para una demo con 4 agentes. |
-| **Embeddings** | `models/gemini-embedding-001` | GA | Único modelo de embeddings estable en la API v1beta al momento del desarrollo (`embedding-001` quedó deprecado). |
-| **SDK de Gemini** | `google-genai` (nuevo) | 2.10.0 | Reemplazo del paquete deprecado `google-generativeai` que rompió compatibilidad con `chromadb` 1.5.x. |
-| **Vector store (RAG)** | `chromadb` | 1.5.9 | Pedido por la consigna. Persistencia local sin servidor, SQLite-backed, ideal para una demo sin infra adicional. |
-| **Base de datos** | SQLite (stdlib) | 3.x | Pedido por la consigna. Cero configuración, archivo local `data/payments.db`. Suficiente para el volumen de un TP. |
-| **Lenguaje** | Python | 3.12 | Pedido por la consigna (3.11+). Usamos 3.12 por compatibilidad con `google-adk` 2.3. |
-| **Gestión de entorno** | `python-dotenv` | 1.2.2 | Estándar de facto para cargar `.env`. |
-| **Servidor MCP** | `mcp` | 1.28.1 | Pedido por la consigna. Lo dejamos instalado aunque el mock del supplier tool no expone server real (suficiente para extender a futuro). |
-| **Métricas NLP** | `bert-score` + `xlm-roberta-base` | última | Pedido por la consigna para evaluar calidad de justificaciones. `xlm-roberta-base` es multilingüe (español OK). |
-| **Entorno virtual** | `venv` (stdlib) | — | Estándar, sin dependencias externas (vs `poetry`/`conda`). |
-| **UI** | `adk web` (FastAPI + React) | built-in | Incluida en `google-adk`. Brinda chat, gestión de sesiones y event inspector gratis. |
+### Objetivos Principales
 
-### 2.2. Justificación detallada por componente
+- ✅ Validar proveedores activos contra registros internos
+- ✅ Verificar montos contra límites contractuales (vía RAG)
+- ✅ Aplicar reglas de negocio (guardrails)
+- ✅ Registrar todas las decisiones para auditoría
+- ✅ Proporcionar interfaces para proveedores y administradores
 
-#### 2.2.1. Google ADK como framework de agentes
+### Funcionalidades Clave
 
-Elegimos ADK porque la consigna lo pide explícitamente, pero además porque
-ofrece tres primitivas que encajan perfecto con el dominio:
-
-- **`LlmAgent`**: abstracción de alto nivel sobre un modelo Gemini con
-  `instruction` + `tools` + `sub_agents` declarativos.
-- **`Runner` + `SessionService`**: ciclo de vida de la conversación y state
-  persistente entre turnos sin que tengamos que implementarlo.
-- **`output_key`**: mecanismo declarativo para que un agente publique su
-  respuesta en el state. Evita tener que parsear texto libre.
-
-Comparado con LangChain/LlamaIndex, ADK es menos general pero más *opinionated*
-para el caso "agente con tools y sub-agentes", que es exactamente lo nuestro.
-
-#### 2.2.2. `gemini-2.0-flash-latest` como LLM
-
-Para los 4 agentes necesitamos un modelo que:
-
-1. **Razone bien sobre JSON estructurado** (invoices, decisiones).
-2. **Sea rápido** (la demo corre varios casos en segundos).
-3. **Sea barato** (varias invocaciones por factura: orquestador + 3 sub-agentes + judge).
-
-`gemini-2.0-flash` cumple los tres. Usar `gemini-2.5-pro` sería overkill y
-ralentizaría la demo sin ganancia de calidad perceptible para esta tarea.
-
-#### 2.2.3. ChromaDB para RAG
-
-ChromaDB es el estándar *ligero* para RAG local:
-
-- **Persistencia local** (`PersistentClient`) → cero infra.
-- **Filtrado por metadata** (`where={"supplier_id": "SUP001"}`) → recuperamos
-  solo los chunks del proveedor correcto.
-- **Compatible con cualquier `EmbeddingFunction`** → pudimos reemplazarla por
-  la nuestra custom cuando el wrapper oficial rompió.
-
-Alternativas consideradas:
-- **FAISS**: más rápido pero no persiste metadata ni filtra tan fácil.
-- **Qdrant/Milvus**: requieren un servidor Docker.
-- **Vertex AI Vector Search**: overkill para 4 PDFs.
-
-#### 2.2.4. SQLite para auditoría
-
-- **Sin servidor** (`sqlite3` viene en stdlib).
-- **ACID**: cada registro de pago es atómico.
-- **Consultable**: podemos listar pagos con SQL directo (ver
-  `list_payments` en `tools/payment_db_tool.py`).
-
-Para producción real consideraríamos Postgres, pero para el TP es más que
-suficiente y mantiene la barrera de entrada en cero.
-
-#### 2.2.5. `google-genai` (nuevo SDK) en vez de `google-generativeai` (viejo)
-
-Decisión forzada por una incompatibilidad detectada al instalar el entorno:
-`google-generativeai 0.8.6` (última) introdujo una opción `headers` en
-`genai.configure()` que rompe el wrapper de ChromaDB
-(`ClientOptions does not accept an option 'headers'`).
-
-Solución implementada en [`rag/embedding_function.py`](rag/embedding_function.py):
-escribimos un `GoogleGenAiEmbeddingFunction` custom que implementa el
-protocolo `EmbeddingFunction` de ChromaDB pero llama a `google.genai.Client`
-directamente. Detalles completos en [`CHANGELOG.md`](CHANGELOG.md) v1.1.0.
-
-#### 2.2.6. BertScore con `xlm-roberta-base`
-
-BertScore mide similitud semántica entre la justificación esperada y la
-real (no overlap léxico como BLEU). Como nuestras justificaciones están en
-español, necesitamos un modelo **multilingüe**:
-
-- `xlm-roberta-base` soporta 100+ idiomas incluyendo español con buena
-  calidad. Costo: ~800 MB de modelo, vale la pena.
-- Alternativa monolingüe (`bert-base-spanish-wwm-cased`) sería más liviana
-  pero menos versátil.
+| Funcionalidad | Descripción |
+|--------------|-------------|
+| **Flujo A** | Alta de nuevas facturas con validación completa |
+| **Flujo B** | Consulta de estado de facturas existentes |
+| **Guardrails** | 26 reglas de validación (estructurales, negocio, seguridad) |
+| **RAG** | Búsqueda semántica en contratos con ChromaDB |
+| **A2A** | Protocolo Agent-to-Agent para auditoría externa |
+| **ML** | Modelo de riesgo con scikit-learn |
+| **🏢 Proveedores (ABM)** | CRUD completo + contratos con modo EXACTO/NO_SUPERAR |
+| **🤖 Asistente IA "GI"** | Chat con memoria y acciones sobre el sistema |
 
 ---
 
-## 3. Arquitectura del sistema
+## 2. Arquitectura del Sistema
 
-### 3.1. Diagrama de componentes
-
-```
-                  ┌────────────────────────────────┐
-   Invoice JSON ─▶│   ORQUESTADOR (LlmAgent root) │
-                  └────────────────┬───────────────┘
-                                   │ delega en orden
-        ┌──────────────────────────┼──────────────────────────┐
-        ▼                          ▼                          ▼
- ┌──────────────┐          ┌──────────────┐           ┌──────────────┐
- │  VALIDATOR   │          │   CONTRACT   │           │   PAYMENT    │
- │ (LlmAgent)   │          │ (LlmAgent)   │           │ (LlmAgent)   │
- └──────┬───────┘          └──────┬───────┘           └──────┬───────┘
-        │ tool                   │ tool                     │ tool
-        ▼                        ▼                          ▼
- supplier_lookup_tool      search_contract_tool       register_payment_tool
- (MCP mock dict)          (ChromaDB + Gemini          (SQLite local)
-                           embeddings)
-```
-
-### 3.2. Capas de la aplicación
+### 2.1 Diagrama de Componentes
 
 ```
-┌───────────────────────────────────────────────────────────────┐
-│ CAPA 4 — UI               │ adk web (FastAPI + React)        │
-├───────────────────────────────────────────────────────────────┤
-│ CAPA 3 — Orquestación     │ Runner + InvoiceSessionManager   │
-├───────────────────────────────────────────────────────────────┤
-│ CAPA 2 — Agentes          │ invoice_orchestrator (root)      │
-│                           │  ├─ validator_agent              │
-│                           │  ├─ contract_agent (RAG)         │
-│                           │  └─ payment_agent                 │
-├───────────────────────────────────────────────────────────────┤
-│ CAPA 1 — Tools            │ supplier_lookup_tool (MCP mock)  │
-│                           │ search_contract_tool (ChromaDB)  │
-│                           │ register_payment_tool (SQLite)   │
-├───────────────────────────────────────────────────────────────┤
-│ CAPA 0 — Persistencia     │ ChromaDB (data/chroma_db/)       │
-│                           │ SQLite (data/payments.db)        │
-└───────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           CAPA 4: INTERFAZ DE USUARIO                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌─────────────────────┐         ┌─────────────────────┐                   │
+│  │   Back Office       │         │  Supplier Portal    │                   │
+│  │   (Administración)  │         │  (Proveedores)      │                   │
+│  └──────────┬──────────┘         └──────────┬──────────┘                   │
+│             │                               │                              │
+│             └───────────────┬───────────────┘                              │
+│                             ▼                                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                           CAPA 3: ORQUESTACIÓN                             │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────────────────────────────────────────────────────────────┐  │
+│  │                    INVOICE ORCHESTRATOR (ADK)                         │  │
+│  │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐  │  │
+│  │  │   Router    │  │  Validator  │  │  Contract   │  │   Payment   │  │  │
+│  │  │   Agent     │  │   Agent     │  │   Agent     │  │   Agent     │  │  │
+│  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  │  │
+│  │                                                                  │  │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │  │
+│  │  │                    GUARDRAIL ENGINE                         │  │  │
+│  │  │  (26 reglas: VR + BR + SR + CR)                          │  │  │
+│  │  └─────────────────────────────────────────────────────────────┘  │  │
+│  └──────────────────────────────────────────────────────────────────────┘  │
+│                             │                                              │
+├─────────────────────────────┼───────────────────────────────────────────────┤
+│                           CAPA 2: HERRAMIENTAS (Tools)                      │
+├─────────────────────────────┼───────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │  Supplier    │  │    RAG       │  │   Payment    │  │   Invoice    │    │
+│  │  MCP Tool    │  │   Tool       │  │   DB Tool    │  │   Status     │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                      │
+│  │  Folder      │  │    PDF       │  │    ML        │                      │
+│  │  Manager     │  │  Extractor   │  │   Risk       │                      │
+│  └──────────────┘  └──────────────┘  └──────────────┘                      │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                           CAPA 1: PERSISTENCIA                              │
+├─────────────────────────────────────────────────────────────────────────────┤
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐    │
+│  │   SQLite     │  │  ChromaDB    │  │    Files     │  │    A2A       │    │
+│  │ (payments)   │  │  (RAG)       │  │  (PDFs)      │  │  Server      │    │
+│  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
+│                                                                             │
+│  ┌──────────────┐  ┌──────────────┐                                        │
+│  │   SQLite     │  │   SQLite     │                                        │
+│  │ (suppliers)  │  │  (chat)      │                                        │
+│  └──────────────┘  └──────────────┘                                        │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 3.3. State flow entre agentes
+### 2.2 Flujo de Datos entre Componentes
 
 ```
-Invoice JSON
-     │
-     ▼
-┌──────────────────────────────────────────────────────────────┐
-│ Orchestrator                                                 │
-│  ├─ run_invoice_guardrail_tool(json) → guardrail_*           │
-│  │                                                          │
-│  ├─ transfer to validator_agent                             │
-│  │     └─ output_key="validator_result"                     │
-│  │           {status, reason, supplier_data}                │
-│  │                                                          │
-│  ├─ transfer to contract_agent                              │
-│  │     └─ output_key="contract_result"                      │
-│  │           {status, contract_limit, contract_fragment}    │
-│  │                                                          │
-│  └─ transfer to payment_agent                               │
-│        └─ output_key="payment_result"                        │
-│              {status, confirmation_id, payment_status}       │
-└──────────────────────────────────────────────────────────────┘
-     │
-     ▼
-final_decision (output_key del root agent)
-{decision, invoice_id, supplier_id, amount,
- rejection_reason, confirmation_id, payment_status,
- guardrail_action, guardrail_reason}
+Solicitud HTTP
+      │
+      ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ FASTAPI Backend (Puerto 8000)                                           │
+│  ├── /invoice/new → InvoiceOrchestrator                                 │
+│  ├── /invoice/status → InvoiceStatusTool                                │
+│  └── /chat → RouterAgent                                               │
+└─────────────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ INVOICE ORCHESTRATOR                                                     │
+│  1. Apply Guardrail (validación estructural)                            │
+│  2. Transfer → ValidatorAgent (supplier_id)                            │
+│  3. Transfer → ContractAgent (RAG + monto)                             │
+│  4. Transfer → PaymentAgent (persistir decisión)                       │
+└─────────────────────────────────────────────────────────────────────────┘
+      │
+      ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│ RESULTADO                                                               │
+│  { decision, confirmation_id, payment_status, rejection_reason }        │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 4. Flujo implementado paso a paso
+## 3. Stack Tecnológico
 
-A continuación se describe el procesamiento de **una factura** desde que
-entra al sistema hasta que se persiste en SQLite.
+| Componente | Tecnología | Versión | Justificación |
+|-----------|------------|---------|---------------|
+| **Framework de Agentes** | Google ADK | 2.3.0 | Requerido por la consigna. Abstracción de alto nivel para LlmAgent, Runner, SessionService |
+| **Modelo LLM** | Gemini 2.0 Flash | latest | Balance ideal latencia/costo/razonamiento |
+| **Embeddings** | Gemini Embedding | 001 | Modelo GA estable para ChromaDB |
+| **Vector Store (RAG)** | ChromaDB | 1.5.9 | Persistencia local, SQLite-backed, sin servidor |
+| **Base de Datos** | SQLite | 3.x | Cero configuración, archivo local `data/payments.db` |
+| **Backend API** | FastAPI | 0.100+ | Alto rendimiento, documentación automática con OpenAPI |
+| **Lenguaje** | Python | 3.12 | Requerido por consigna (3.11+) |
+| **Métricas NLP** | BertScore + XLM-RoBERTa | latest | Evaluación multilingüe de justificaciones |
+| **ML** | scikit-learn | latest | Modelo de riesgo predictivo |
+| **UI** | HTML/CSS/JS | — | Frontend ligero sin framework |
 
-### Paso 0 — Recepción y carga del state
+---
 
-1. El usuario pega un JSON con la factura en la UI de ADK.
-2. El orquestador lo recibe como `user message` y extrae los campos:
-   `invoice_id`, `supplier_id`, `supplier_name`, `amount`, `currency`,
-   `invoice_date`.
-3. Inicializa el `session.state` con esos valores.
+## 3.5 Asistente IA "GI" 🤖
 
-**Por qué**: el state es el contrato de datos compartido entre los
-sub-agentes. Sin un state inicial bien poblado, los agentes no saben qué
-procesar.
+El BackOffice incluye un **chat conversacional** con el Asistente Inteligente GI que entiende lenguaje natural y puede **ejecutar acciones** sobre el sistema.
 
-### Paso 1 — Guardrail estructural (`run_invoice_guardrail_tool`)
+### Comandos de consulta
 
-El orquestador invoca su propia tool de guardrail:
+| Comando | Acción |
+|---------|--------|
+| "me podras decir los montos" | Lista montos del inbox + total |
+| "mostrame el historial" | Pagos registrados |
+| "cuánto suman las facturas" | Totales por estado |
+| "resumen" | Overview del sistema |
+| "qué facturas hay en el inbox" | Lista pendientes |
+| "ayuda" | Lista de comandos |
+
+### Comandos de acción (write)
+
+| Comando | Acción |
+|---------|--------|
+| "procesá todo el inbox" | Procesa todas las pendientes |
+| "procesá la factura FC-0001-00000001" | Procesa una específica |
+| "cambia el límite de SUP001 a 200000" | Modifica `contracts.contract_limit` |
+| "cambia el modo de SUP002 a exacto" | Modifica `contracts.mode` (EXACTO/NO_SUPERAR) |
+| "activá SUP003" / "desactivá SUP003" | Cambia `suppliers.status` |
+| "cambiar email de SUP001 a x@y.com" | Modifica `suppliers.email` |
+| "eliminá SUP003" + "sí" | Baja lógica con confirmación |
+| "ahora desactiva ese mismo" | Memoria: repite última acción |
+
+### Memoria Conversacional
+
+Las sesiones se persisten en `data/chat_sessions.db` (SQLite):
+
+```sql
+sessions(id, title, created_at, last_active_at)
+messages(id, session_id, role, content, intent, created_at)
+```
+
+El sistema recuerda las últimas 5 interacciones para resolver referencias como "ese mismo", "ahora hacelo", "y del historial?".
+
+### Endpoints REST
+
+| Método | Path | Descripción |
+|--------|------|-------------|
+| POST | `/chat` | Enviar mensaje (body: `{message, session_id?}`) |
+| GET | `/chat/sessions` | Listar sesiones |
+| POST | `/chat/sessions` | Crear nueva sesión |
+| GET | `/chat/sessions/{id}` | Obtener mensajes |
+| DELETE | `/chat/sessions/{id}` | Eliminar sesión |
+
+## 3.6 ABM de Proveedores 🏢
+
+Backend completo para gestión de proveedores y sus contratos. Ver [SPECS_012](./docs/SPECS_012_PROVEEDORES.md).
+
+### Modos de validación de contrato
+
+- **NO_SUPERAR** (default): la factura puede ser menor o igual al límite
+- **EXACTO**: la factura debe ser exactamente igual al límite
+
+### Endpoints
+
+| Método | Path | Descripción |
+|--------|------|-------------|
+| POST | `/suppliers` | Alta (con contrato opcional) |
+| PUT | `/suppliers/{id}` | Modificar |
+| DELETE | `/suppliers/{id}` | Baja lógica |
+| POST | `/suppliers/{id}/contract` | Asignar contrato |
+| GET | `/suppliers/{id}/check?amount=N` | Validar factura |
+
+## 4. Agentes Implementados
+
+### 4.1 Agentes Principales (ADK)
+
+| Agente | Tipo | Responsabilidad | Output Key |
+|--------|------|----------------|------------|
+| **InvoiceOrchestrator** | LlmAgent (root) | Coordina flujo, aplica guardrail final | `final_decision` |
+| **RouterAgent** | LlmAgent (sub) | Clasifica intención del chat | `intent` |
+| **ValidatorAgent** | LlmAgent (sub) | Valida proveedor (MCP mock) | `validator_result` |
+| **ContractAgent** | LlmAgent (sub) | Controla monto vs contrato (RAG) | `contract_result` |
+| **PaymentAgent** | LlmAgent (sub) | Persiste en SQLite | `payment_result` |
+| **InvoiceManagerAgent** | LlmAgent (sub) | Gestiona archivos y extracción | `invoice_data` |
+
+### 4.2 Agente Externo (A2A)
+
+| Agente | Puerto | Responsabilidad |
+|--------|--------|-----------------|
+| **ExternalAuditorAgent** | 8003 | Auditoría de facturas escaladas |
+
+### 4.3 State Compartido
 
 ```python
-result = apply_invoice_guardrail(invoice_data)
-# → {"passed": bool, "action": "APPROVE"|"REJECT"|"ESCALATE", "reason": str}
-```
-
-Reglas aplicadas (en orden):
-
-| Regla | Condición | Acción |
-|---|---|---|
-| Tipo | `invoice_data` no es dict | `REJECT` |
-| Campos obligatorios | Faltan `invoice_id`, `supplier_id`, `amount`, `invoice_date` | `REJECT` |
-| Formato `supplier_id` | No matchea `^[A-Za-z0-9_\-]+$` | `REJECT` |
-| Formato fecha | No matchea `YYYY-MM-DD` | `REJECT` |
-| Monto numérico | `float(amount)` falla | `REJECT` |
-| Monto mínimo | `amount <= 0` | `REJECT` |
-| Monto máximo absoluto | `amount > 500000` | `ESCALATE` |
-| OK | — | `APPROVE` |
-
-**Por qué un guardrail determinístico**:
-
-- **Latencia cero** vs evaluar con un LLM.
-- **Reproducible**: el mismo input siempre produce el mismo output.
-- **Fácil de testear** (ver `python -m guardrails.invoice_guardrail`).
-- **Es la primera línea de defensa**: si el input está malformado, no
-  tiene sentido gastar tokens del orquestador.
-
-Si `passed=False`:
-- `action="ESCALATE"` → decisión final `ESCALATED`, salta directo al Paso 4.
-- `action="REJECT"` → decisión final `REJECTED`, salta directo al Paso 4.
-
-### Paso 2 — Validación de proveedor (`validator_agent`)
-
-El orquestador transfiere al sub-agente `validator_agent` con el `supplier_id`.
-
-1. El agente lee `supplier_id` del state.
-2. Invoca la tool `supplier_lookup_tool(supplier_id)`.
-3. Esta tool consulta el *mock service* de proveedores (dict en memoria
-   en `tools/supplier_mcp_tool.py`).
-4. Devuelve:
-   - `found=False` → `status="INVALID"`, motivo "no encontrado".
-   - `found=True` y `status="ACTIVE"` → `status="VALID"`.
-   - `found=True` y `status≠"ACTIVE"` → `status="INVALID"`, motivo
-     "proveedor INACTIVE".
-5. El agente escribe el resultado en `state.validator_result` vía
-   `output_key`.
-
-**Por qué un agente dedicado** (y no hacerlo el orquestador directo):
-
-- **Separation of concerns**: el orquestador no debe saber cómo se valida
-  un proveedor. Si mañana se cambia la fuente (REST API, otro MCP), solo
-  se modifica este agente.
-- **Trazabilidad**: el dict `validator_result` queda en el state y es
-  auditable.
-- **Testabilidad**: `validator_agent` se puede probar aislado
-  (`python -m agents.validator_agent`).
-
-Si `status="INVALID"` → decisión final `REJECTED`, salta al Paso 4.
-
-### Paso 3 — Control contractual (`contract_agent`)
-
-El orquestador transfiere al sub-agente `contract_agent` con `supplier_id`
-y `amount`.
-
-1. El agente lee ambos del state.
-2. Invoca la tool `search_contract_tool(supplier_id, amount)`.
-3. La tool llama a `rag.retriever.retrieve_contract_info(supplier_id, amount)`
-   que:
-   - Construye un query: `"contrato proveedor {supplier_id} monto máximo
-     autorizado por factura límite"`.
-   - Genera el embedding con `GoogleGenAiEmbeddingFunction`
-     (`task_type="RETRIEVAL_QUERY"`).
-   - Recupera los **2 chunks más similares** de ChromaDB.
-   - Filtra por metadata `supplier_id` (para evitar falsos positivos).
-   - Extrae el monto máximo con regex `_parse_amount()` (acepta
-     `$150.000`, `$150,000`, `$150,000.50`).
-4. Devuelve:
-   - `found=False` o sin monto extraíble → `status="NO_CONTRACT"`.
-   - `within_limit=True` → `status="WITHIN_LIMIT"`.
-   - `within_limit=False` → `status="EXCEEDS_LIMIT"`.
-
-**Por qué RAG y no un dict hardcodeado**:
-
-- **Generaliza**: si se agregan 100 proveedores nuevos, solo se sube el
-  `.txt` del contrato y se corre `rag/ingest.py`. No hay que tocar código.
-- **Cita la fuente**: el campo `contract_fragment` permite explicar la
-  decisión con el texto literal del contrato.
-- **Tolerante a cambios de formato**: el regex acepta separadores de miles
-  `.` o `,` y decimales en cualquier convención.
-
-Si `status ∈ {NO_CONTRACT, EXCEEDS_LIMIT}` → decisión final `REJECTED`,
-salta al Paso 4.
-
-### Paso 4 — Registro de pago (`payment_agent`)
-
-El orquestador transfiere al sub-agente `payment_agent` con
-`invoice_id`, `supplier_id`, `amount`, `decision`, `rejection_reason`.
-
-1. El agente invoca la tool `register_payment_tool(...)`.
-2. La tool:
-   - Valida que `decision ∈ {APPROVED, REJECTED, ESCALATED}`.
-   - Mapea `decision` a `payment_status`:
-     - `APPROVED` → `PENDING_PAYMENT`
-     - `ESCALATED` → `PENDING_HUMAN_REVIEW`
-     - `REJECTED` → `REJECTED`
-   - Genera un `confirmation_id` único: `PAY-{8 hex chars}`.
-   - Inserta en SQLite (`data/payments.db`).
-3. Devuelve el `confirmation_id` y `payment_status`.
-
-**Por qué registrar incluso rechazos y escalados**: la auditoría debe
-tener trazabilidad completa de cada factura que entró al sistema, sin
-importar la decisión. Esto permite análisis posterior ("¿cuántas facturas
-escalamos este mes?") y disputas legales.
-
-### Paso 5 — Decisión final
-
-El orquestador compone el dict de salida con la forma exacta:
-
-```json
-{
-  "decision": "APPROVED" | "REJECTED" | "ESCALATED",
-  "invoice_id": "<id>",
-  "supplier_id": "<id>",
-  "amount": <float>,
-  "rejection_reason": "<motivo o vacío>",
-  "confirmation_id": "<id devuelto por payment_agent>",
-  "payment_status": "<estado devuelto por payment_agent>",
-  "guardrail_action": "<APPROVE|REJECT|ESCALATE>",
-  "guardrail_reason": "<motivo guardrail>"
+session.state = {
+    # Datos de entrada
+    "invoice_id": str,
+    "supplier_id": str,
+    "supplier_name": str,
+    "amount": float,
+    "currency": str,
+    "invoice_date": str,  # YYYY-MM-DD
+    
+    # Resultados de agentes
+    "guardrail_action": str,      # APPROVE | REJECT | ESCALATE
+    "guardrail_reason": str,
+    "validator_result": dict,    # {status, reason, supplier_data}
+    "contract_result": dict,      # {status, contract_limit, fragment}
+    "payment_result": dict,      # {status, confirmation_id, payment_status}
+    
+    # Decisión final
+    "final_decision": dict       # {decision, rejection_reason, ...}
 }
 ```
 
-Y lo escribe en `state.final_decision` (via `output_key`).
+---
+
+## 5. Flujo de Negocio
+
+### 5.1 Flujo A — Alta de Factura
+
+```
+┌─────────────┐
+│ Proveedor   │
+│ sube PDF    │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────────────────────────────────────────────────┐
+│ GUARDRAIL (26 reglas)                                            │
+│  ┌──────────────────────────────────────────────────────────┐    │
+│  │ VR (7 reglas) — Validación Estructural                   │    │
+│  │ BR (10 reglas) — Reglas de Negocio                       │    │
+│  │ SR (5 reglas) — Seguridad                               │    │
+│  │ CR (3 reglas) — Continuidad                            │    │
+│  └──────────────────────────────────────────────────────────┘    │
+└──────┬─────────────────────────────────────────────────────────┘
+       │
+       ├── REJECT ──→ mensaje de error
+       │
+       ├── ESCALATE ──→ A2A → ExternalAuditorAgent → revisión humana
+       │
+       └── APPROVE ──→ siguiente paso
+              │
+              ▼
+       ┌──────────────┐
+       │  VALIDATOR   │ ←── MCP mock (suppliers dict)
+       │   AGENT      │
+       └──────┬───────┘
+              │
+              ├── INVALID ──→ REJECT (proveedor inactivo/no existe)
+              │
+              └── VALID ──→ siguiente paso
+                     │
+                     ▼
+              ┌──────────────┐
+              │  CONTRACT    │ ←── ChromaDB RAG
+              │   AGENT      │
+              └──────┬───────┘
+                     │
+                     ├── NO_CONTRACT ──→ REJECT
+                     ├── EXCEEDS_LIMIT ──→ REJECT
+                     │
+                     └── WITHIN_LIMIT ──→ siguiente paso
+                            │
+                            ▼
+                     ┌──────────────┐
+                     │   PAYMENT    │ ←── SQLite
+                     │   AGENT      │
+                     └──────┬───────┘
+                            │
+                            ▼
+                     ┌──────────────┐
+                     │   SQLite     │
+                     │   payments.db│
+                     └──────────────┘
+                            │
+                            ▼
+                     ┌─────────────────┐
+                     │  APROBADO ✓    │
+                     │  (PENDING)      │
+                     └─────────────────┘
+```
+
+### 5.2 Flujo B — Consulta de Estado
+
+```
+┌─────────────┐
+│ Proveedor   │
+│ consulta    │
+│ estado      │
+└──────┬──────┘
+       │
+       ▼
+┌──────────────────────────────────────┐
+│ INVOICE STATUS TOOL                   │
+│  1. Buscar por invoice_id o supplier │
+│  2. Retornar estado actual           │
+└──────────────────────────────────────┘
+       │
+       ▼
+┌──────────────────────────────────────┐
+│ RESPUESTA                             │
+│  { status, date, amount, reason?,     │
+│    payment_info?, auditor_result? }  │
+└──────────────────────────────────────┘
+```
 
 ---
 
-## 5. Estructura de carpetas
+## 6. Estructura de Carpetas
 
 ```
 invoice_approval_system/
-├── agent.py                    ← entry point (root_agent) detectado por `adk web`
-├── .env.example                ← plantilla para GOOGLE_API_KEY
-├── .gitignore                  ← ignora .env, venv, DB, chroma_db
-├── requirements.txt            ← dependencias pip
-├── README.md                   ← este archivo
-├── INSTALL.md                  ← guía de instalación paso a paso
-├── CHANGELOG.md                ← historial de versiones y fixes
 │
-├── agents/                     ← 4 agentes (LlmAgent)
-│   ├── orchestrator.py         ← root agent (coordina + guardrail)
-│   ├── validator_agent.py      ← sub: valida proveedor
-│   ├── contract_agent.py       ← sub: control contractual (RAG)
-│   └── payment_agent.py        ← sub: persiste en SQLite
+├── agent.py                     # Entry point ADK
+├── .env.example                 # Plantilla variables de entorno
+├── requirements.txt             # Dependencias Python
+├── README.md                    # Este archivo
+├── CHANGELOG.md                 # Historial de versiones
+├── INSTALL.md                   # Guía de instalación
 │
-├── tools/                      ← 3 tools (FunctionTool)
-│   ├── supplier_mcp_tool.py    ← MCP mock (dict de proveedores)
-│   ├── rag_tool.py             ← wrapper sobre rag.retriever
-│   └── payment_db_tool.py      ← INSERT en SQLite
+├── agents/                      # Agentes ADK
+│   ├── orchestrator.py          # Agente principal
+│   ├── router_agent.py          # Clasificador de intenciones
+│   ├── validator_agent.py       # Validador de proveedores
+│   ├── contract_agent.py        # Control contractual (RAG)
+│   ├── payment_agent.py         # Registro de pagos
+│   ├── invoice_manager_agent.py # Gestor de archivos
+│   └── __init__.py
 │
-├── rag/                        ← ingesta + retrieval + embeddings
-│   ├── ingest.py               ← corre UNA vez: lee .txt y los indexa
-│   ├── retriever.py            ← query semántica + parseo de monto
-│   └── embedding_function.py   ← wrapper custom de google.genai para Chroma
+├── tools/                       # Herramientas (FunctionTool)
+│   ├── supplier_mcp_tool.py     # Mock MCP de proveedores
+│   ├── rag_tool.py             # Wrapper ChromaDB
+│   ├── payment_db_tool.py      # SQLite operations
+│   ├── invoice_status_tool.py  # Consulta de estado
+│   ├── folder_manager_tool.py  # Gestión de archivos
+│   ├── pdf_extractor_tool.py   # Extracción de PDF
+│   ├── ml_risk_tool.py        # Evaluación de riesgo ML
+│   └── __init__.py
 │
-├── guardrails/                 ← reglas de seguridad
-│   └── invoice_guardrail.py    ← validación estructural determinística
+├── guardrails/                  # Sistema de guardrails
+│   ├── rules.yaml              # Definición de 26 reglas
+│   ├── guardrail_engine.py     # Motor de evaluación
+│   ├── invoice_guardrail.py    # Validación estructural
+│   └── __init__.py
 │
-├── data/
-│   ├── contracts/              ← .txt de contratos (input del RAG)
-│   ├── chroma_db/              ← ChromaDB persistente (auto-generado)
-│   └── payments.db             ← SQLite (auto-generado)
+├── rag/                         # Retrieval Augmented Generation
+│   ├── ingest.py               # Indexación de contratos
+│   ├── retriever.py            # Búsqueda semántica
+│   ├── embedding_function.py   # Wrapper Gemini para Chroma
+│   └── __init__.py
 │
-├── sessions/                   ← gestión de sesiones ADK
-│   └── session_manager.py      ← InvoiceSessionManager (wrapper)
+├── ml/                          # Machine Learning
+│   ├── risk_model.py           # Modelo de riesgo
+│   └── __init__.py
 │
-└── evaluation/                 ← métricas de calidad
-    ├── golden_cases.py         ← 6 casos de prueba (GC001-GC006)
-    ├── llm_judge.py            ← Gemini como juez semántico
-    └── metrics.py              ← runner + BertScore + agregación
+├── sessions/                    # Gestión de sesiones ADK
+│   └── session_manager.py
+│
+├── evaluation/                  # Evaluación del sistema
+│   ├── golden_cases.py         # 20 casos de prueba
+│   ├── llm_judge.py           # Gemini como juez
+│   ├── metrics.py             # Métricas (accuracy, BERTscore)
+│   └── __init__.py
+│
+├── platform/                    # Backend y Frontend
+│   ├── backend/
+│   │   ├── main.py             # Servidor FastAPI
+│   │   ├── settings.py         # Configuración
+│   │   └── routers/            # Endpoints API
+│   ├── frontend/               # Back Office
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   └── style.css
+│   └── services/               # Microservicios
+│       ├── supplier_service/
+│       └── contract_service/
+│
+├── supplier_portal/            # Portal del Proveedor
+│   ├── index.html
+│   ├── app.js
+│   └── style.css
+│
+├── a2a/                        # Protocolo Agent-to-Agent
+│   └── external_auditor_agent/ # Agente auditor externo
+│
+├── data/                       # Datos persistentes
+│   ├── payments.db            # SQLite (auto-generado)
+│   ├── chroma_db/            # Vector store (auto-generado)
+│   ├── contracts/            # Contratos .txt para RAG
+│   └── new_invoices/         # Facturas pendientes
+│
+├── tests/                      # Tests
+│   └── eval/                  # Evaluación
+│       ├── datasets/
+│       │   └── invoiceflow-dataset.json
+│       └── eval_config.yaml
+│
+└── docs/                      # Documentación adicional
+    ├── especificacion_sistema_invoiceflow.md
+    ├── documento_guardrails_invoiceflow.md
+    ├── INSTALACION_WINDOWS.md
+    ├── INSTALACION_LINUX.md
+    └── INSTALACION_MACOS.md
 ```
 
 ---
 
-## 6. Instalación
+## 7. Instalación Rápida
 
-> **Para instrucciones detalladas ver [`INSTALL.md`](INSTALL.md).**
-> Resumen rápido:
+### Requisitos Previos
+
+- Python 3.12+
+- Git (opcional)
+- Windows 10/11, Linux, o macOS
+
+### Pasos (3 minutos)
 
 ```bash
+# 1. Clonar o descargar el proyecto
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
 cd invoice_approval_system
+
+# 2. Crear entorno virtual
 python -m venv .venv
-.venv\Scripts\activate          # Windows
+
+# 3. Activar entorno
+# Windows:
+.venv\Scripts\activate
+# Linux/macOS:
+source .venv/bin/activate
+
+# 4. Instalar dependencias
 pip install -r requirements.txt
-copy .env.example .env          # Windows — luego editar GOOGLE_API_KEY
-python rag/ingest.py            # indexar contratos (solo la primera vez)
+
+# 5. Configurar API Key
+cp .env.example .env
+# Editar .env y agregar GOOGLE_API_KEY
+
+# 6. Indexar contratos (solo primera vez)
+python rag/ingest.py
 ```
 
-O usar los scripts:
-- `setup.bat` — automatiza todo lo anterior.
-- `start.bat` — levanta la UI (`adk web`).
+### Scripts Automatizados
+
+| Script | Plataforma | Función |
+|--------|-----------|---------|
+| `INICIAR.bat` | Windows | Inicia los 3 servicios automáticamente |
+| `setup.bat` | Windows | Instala y configura todo |
+| `smoke_test.bat` | Windows | Verifica componentes |
 
 ---
 
-## 7. Ejecución (UI y smoke tests)
+## 8. Ejecución del Sistema
 
-### 7.1. Levantar la UI
-
-Desde el directorio **padre** del proyecto:
+### 8.1 Inicio Completo (3 terminales)
 
 ```bash
-adk web invoice_approval_system
+# Terminal 1 - Supplier Service
+python -m platform.services.supplier_service.main
+# Puerto: 8001
+
+# Terminal 2 - Contract Service
+python -m platform.services.contract_service.main
+# Puerto: 8002
+
+# Terminal 3 - Backend
+cd platform/backend
+python main.py
+# Puerto: 8000
 ```
 
-O desde el proyecto:
+### 8.2 URLs del Sistema
+
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| **Back Office** | http://localhost:8000/ | Panel de administración |
+| **Supplier Portal** | http://localhost:8000/supplier/ | Portal del proveedor |
+| **API Docs (Backend)** | http://localhost:8000/docs | Documentación Swagger |
+| **API Docs (Supplier)** | http://localhost:8001/docs | API de proveedores |
+| **API Docs (Contract)** | http://localhost:8002/docs | API de contratos |
+
+### 8.3 Verificación de Salud
 
 ```bash
-adk web .
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
 ```
-
-La UI queda en `http://localhost:8000`.
-
-### 7.2. Smoke tests (sin UI)
-
-Para verificar que cada componente funciona aislado:
-
-```bash
-python -m guardrails.invoice_guardrail
-python -m tools.supplier_mcp_tool
-python -m tools.rag_tool
-python -m tools.payment_db_tool
-python -m agents.validator_agent
-python -m agents.contract_agent
-python -m agents.payment_agent
-python -m agents.orchestrator
-python -m sessions.session_manager
-```
-
-O automatizado: `smoke_test.bat`.
-
-### 7.3. Evaluación completa
-
-```bash
-python -m evaluation.metrics
-```
-
-Corre los 6 golden cases y emite pass rate + BertScore + LLM judge.
 
 ---
 
-## 8. Ejemplos de uso
+## 9. Ejemplos de Uso
 
-Pegá estos JSON en la UI de ADK como input del orquestador:
+### 9.1 Ejemplo A — Factura Aprobada
 
-### Ejemplo A — Aprobación normal
+**Input:**
 ```json
 {
   "invoice_id": "INV-001",
@@ -533,9 +563,20 @@ Pegá estos JSON en la UI de ADK como input del orquestador:
   "invoice_date": "2025-06-01"
 }
 ```
-→ Esperado: `APPROVED`, contrato $150.000, `PENDING_PAYMENT` en SQLite.
 
-### Ejemplo B — Supera límite contractual
+**Resultado Esperado:**
+```json
+{
+  "decision": "APPROVED",
+  "confirmation_id": "PAY-a3f8b2c1",
+  "payment_status": "PENDING_PAYMENT",
+  "rejection_reason": null
+}
+```
+
+### 9.2 Ejemplo B — Supera Límite Contractual
+
+**Input:**
 ```json
 {
   "invoice_id": "INV-002",
@@ -546,9 +587,12 @@ Pegá estos JSON en la UI de ADK como input del orquestador:
   "invoice_date": "2025-06-02"
 }
 ```
-→ Esperado: `REJECTED`, "excede el límite contractual de $150.000".
 
-### Ejemplo C — Proveedor inactivo
+**Resultado:** `REJECTED` — "Monto $200,000 excede el límite contractual de $150,000"
+
+### 9.3 Ejemplo C — Proveedor Inactivo
+
+**Input:**
 ```json
 {
   "invoice_id": "INV-003",
@@ -559,9 +603,12 @@ Pegá estos JSON en la UI de ADK como input del orquestador:
   "invoice_date": "2025-06-03"
 }
 ```
-→ Esperado: `REJECTED`, "proveedor inactivo".
 
-### Ejemplo D — Escalado por monto (>$500k)
+**Resultado:** `REJECTED` — "Proveedor inactivo"
+
+### 9.4 Ejemplo D — Escalado por Monto
+
+**Input:**
 ```json
 {
   "invoice_id": "INV-004",
@@ -572,22 +619,12 @@ Pegá estos JSON en la UI de ADK como input del orquestador:
   "invoice_date": "2025-06-04"
 }
 ```
-→ Esperado: `ESCALATED`, registrado como `PENDING_HUMAN_REVIEW`.
 
-### Ejemplo E — Proveedor inexistente
-```json
-{
-  "invoice_id": "INV-005",
-  "supplier_id": "SUP999",
-  "supplier_name": "Fantasma SRL",
-  "amount": 5000,
-  "currency": "ARS",
-  "invoice_date": "2025-06-05"
-}
-```
-→ Esperado: `REJECTED`, "no encontrado en el registro".
+**Resultado:** `ESCALATED` → `PENDING_HUMAN_REVIEW`
 
-### Ejemplo F — Datos incompletos (sin `invoice_date`)
+### 9.5 Ejemplo E — Datos Incompletos
+
+**Input:**
 ```json
 {
   "invoice_id": "INV-006",
@@ -597,160 +634,165 @@ Pegá estos JSON en la UI de ADK como input del orquestador:
   "currency": "ARS"
 }
 ```
-→ Esperado: `REJECTED`, "datos incompletos: invoice_date".
+
+**Resultado:** `REJECTED` — "Datos incompletos: invoice_date"
 
 ---
 
-## 9. Evaluación (golden cases + métricas)
+## 10. Evaluación y Testing
 
-El sistema incluye **6 golden cases** (`evaluation/golden_cases.py`) que
-cubren todas las ramas de decisión:
+### 10.1 Golden Cases (20 casos)
 
-| ID | Caso | Decisión esperada |
-|---|---|---|
-| GC001 | Factura válida dentro del límite | `APPROVED` |
-| GC002 | Supera límite contractual | `REJECTED` |
-| GC003 | Proveedor inactivo | `REJECTED` |
-| GC004 | Supera guardrail absoluto ($500k) | `ESCALATED` |
-| GC005 | Proveedor inexistente | `REJECTED` |
-| GC006 | Datos incompletos | `REJECTED` |
+```bash
+python -m evaluation.metrics
+```
 
-### 9.1. Métricas calculadas
-
-1. **Pass rate**: porcentaje de casos donde `decision == expected_decision`
-   **y** todos los `expected_fields` están presentes y no vacíos.
-2. **LLM as a Judge**: Gemini evalúa (a) coincidencia de decisión 60%,
-   (b) coherencia de justificación 25%, (c) presencia de campos 15%.
-   Devuelve score 0-1 y reasoning.
-3. **BertScore F1**: similitud semántica entre justificación esperada y
-   real usando `xlm-roberta-base`. Útil para detectar justificaciones
-   *casi correctas* pero léxicamente distintas.
-
-### 9.2. Salida esperada
-
+**Salida esperada:**
 ```
 GC001 ... PASS (judge=1.00, bert_f1=0.91)
 GC002 ... PASS (judge=1.00, bert_f1=0.88)
 ...
-Pass rate: 6/6 (100.0%) | Avg BertScore F1: 0.89
+Pass rate: 20/20 (100.0%) | Avg BertScore F1: 0.89
+```
+
+### 10.2 Smoke Tests (componentes individuales)
+
+```bash
+python -m guardrails.invoice_guardrail
+python -m tools.supplier_mcp_tool
+python -m tools.rag_tool
+python -m tools.payment_db_tool
+python -m agents.validator_agent
+python -m agents.contract_agent
+python -m agents.payment_agent
+python -m agents.orchestrator
 ```
 
 ---
 
-## 10. Troubleshooting / Fixes aplicados
+## 11. Troubleshooting
 
-### 10.1. Bug detectado al instalar: `chromadb` 1.5.x rompe con `google-generativeai` 0.8.6
+### Error: "ModuleNotFoundError: No module named 'agents'"
 
-**Síntoma**:
-```
-ValueError: ClientOptions does not accept an option 'headers'
-```
-al ejecutar `python rag/ingest.py`.
+**Causa:** ADK no encuentra los módulos desde el directorio de ejecución.
 
-**Causa raíz**: la última versión de `google-generativeai` (deprecada por
-Google) introdujo una opción `headers` en `genai.configure()` que rompe el
-wrapper de ChromaDB (`chromadb.utils.embedding_functions.GoogleGenerativeAiEmbeddingFunction`).
-
-**Fix aplicado (v1.1.0)**: se creó [`rag/embedding_function.py`](rag/embedding_function.py)
-con una clase `GoogleGenAiEmbeddingFunction` custom que:
-
-1. Implementa el protocolo `EmbeddingFunction` de ChromaDB.
-2. Usa el SDK nuevo `google.genai.Client` (no deprecado).
-3. Configura `task_type` correctamente (`RETRIEVAL_DOCUMENT` en ingesta,
-   `RETRIEVAL_QUERY` en retrieval).
-
-**Modelo actualizado**: `models/embedding-001` ya no existe en la API
-v1beta → migrado a `models/gemini-embedding-001` (único GA estable).
-
-### 10.2. Encoding issues en Windows
-
-**Síntoma**: `UnicodeEncodeError: 'charmap' codec can't encode character
-'\u2717'` al imprimir tildes/emojis en consola Windows.
-
-**Fix**: usar `set PYTHONIOENCODING=utf-8` antes de los comandos Python,
-o reemplazar caracteres unicode en los `print()` por ASCII (`[OK]` en
-vez de `✓`).
-
-### 10.3. ADK Web no encuentra los módulos del proyecto
-
-**Síntoma**: `ModuleNotFoundError: No module named 'agents'`.
-
-**Causa**: ADK busca el entry point desde el directorio donde se invoca.
-Si invocamos `adk web invoice_approval_system` desde el padre y el proyecto
-no tiene `__init__.py` en sus sub-paquetes, los imports relativos fallan.
-
-**Fix**: `agent.py` agrega explícitamente `PROJECT_ROOT` a `sys.path` antes
-de los imports.
+**Solución:** `agent.py` ya incluye la corrección con `sys.path.insert(0, PROJECT_ROOT)`.
 
 ---
 
-## 11. Notas técnicas y decisiones de diseño
+### Error: "ValueError: ClientOptions does not accept an option 'headers'"
 
-### 11.1. Por qué `output_key` y no transferencia manual de state
+**Causa:** Incompatibilidad entre `chromadb` 1.5.x y `google-generativeai` 0.8.6.
 
-ADK ofrece `output_key="X"` que automáticamente escribe el último mensaje
-del agente en `state["X"]`. Esto evita que el orquestador tenga que
-*leer* la respuesta textual del sub-agente y parsearla. Más robusto y
-declarativo.
-
-### 11.2. Por qué un guardrail determinístico + LLM judge separado
-
-- **Guardrail determinístico**: filtra *inputs malos* antes de gastar tokens.
-- **LLM judge (en evaluación)**: mide *calidad de las justificaciones*
-  generadas por el orquestador.
-
-Son ortogonales: el primero protege al sistema en producción, el segundo
-mide la calidad del output para iterar.
-
-### 11.3. Por qué `task_type` distinto en ingesta vs query
-
-`RETRIEVAL_DOCUMENT` optimiza los embeddings para ser *indexados* (más
-distinguibles entre sí), mientras que `RETRIEVAL_QUERY` los optimiza para
-ser *comparables* contra documentos. Usar el correcto mejora la precisión
-del retrieval en ~5-10%.
-
-### 11.4. Por qué registrar TODO (no solo aprobaciones)
-
-La auditoría exige trazabilidad completa: incluso un REJECTED queda
-registrado con su `rejection_reason`. Esto permite:
-
-- Reportes de "facturas rechazadas este mes".
-- Análisis de patrones de fraude.
-- Compliance / auditorías externas.
-
-### 11.5. Limitaciones conocidas
-
-1. **Sin reintentos explícitos**: si una tool falla, el orquestador no
-   reintenta automáticamente. Depende del LLM decidir qué hacer.
-2. **`supplier_lookup_tool` es un mock en memoria**: para producción
-   debería ser una llamada HTTP al servicio real de proveedores.
-3. **Sin autenticación en `adk web`**: la UI es local, no expone a internet.
-4. **`InMemorySessionService` pierde sesiones al reiniciar**: usar
-   `DatabaseSessionService` o `VertexAISessionService` en producción.
+**Solución:** Usar el wrapper custom en `rag/embedding_function.py` con `google.genai.Client`.
 
 ---
+
+### Error: "Port already in use" (Windows)
+
+```bash
+netstat -ano | findstr :8000
+taskkill /PID <NUMERO> /F
+```
+
+---
+
+### Encoding Issues en Windows
+
+Agregar al inicio de scripts `.bat`:
+```batch
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
+```
+
+---
+
+## 12. API Reference
+
+### Endpoints Principales
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/invoices/new` | Procesar nueva factura |
+| GET | `/api/invoices/{id}/status` | Consultar estado |
+| POST | `/api/chat` | Chat con router agent |
+| GET | `/health` | Health check |
+| GET | `/api/suppliers/{id}` | Datos de proveedor |
+
+### Esquema de Factura
+
+```json
+{
+  "invoice_id": "string (único)",
+  "supplier_id": "string (formato: SUP###)",
+  "supplier_name": "string",
+  "amount": "number (positivo)",
+  "currency": "string (3 letras, ej: ARS)",
+  "invoice_date": "string (YYYY-MM-DD)"
+}
+```
+
+---
+
+## 13. Licencia y Créditos
+
+### Licencia
+
+Este proyecto es **académico** y fue desarrollado con fines educativos para la materia de Sistemas Multiagentes de la Universidad de Palermo (2025).
+
+### Autores
+
+- Equipo de desarrollo InvoiceFlow
+
+### Tecnologías Utilizadas
+
+- [Google ADK](https://google.github.io/adk-docs/) — Agent Development Kit
+- [Gemini AI](https://ai.google.dev/) — Modelos de lenguaje
+- [ChromaDB](https://www.trychroma.com/) — Vector database
+- [FastAPI](https://fastapi.tiangolo.com/) — Backend framework
+- [scikit-learn](https://scikit-learn.org/) — Machine learning
+
+### Repositorio
+
+🔗 https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
+
+---
+
+## 📚 Documentación Relacionada
+
+| Archivo | Descripción |
+|---------|------------|
+| [`INSTALL.md`](INSTALL.md) | Guía de instalación detallada |
+| [`CHANGELOG.md`](CHANGELOG.md) | Historial de cambios |
+| [`docs/especificacion_sistema_invoiceflow.md`](docs/especificacion_sistema_invoiceflow.md) | Especificación técnica completa |
+| [`docs/documento_guardrails_invoiceflow.md`](docs/documento_guardrails_invoiceflow.md) | Sistema de guardrails |
+| [`docs/INSTALACION_WINDOWS.md`](docs/INSTALACION_WINDOWS.md) | Guía para Windows |
+| [`docs/INSTALACION_LINUX.md`](docs/INSTALACION_LINUX.md) | Guía para Linux |
+| [`docs/INSTALACION_MACOS.md`](docs/INSTALACION_MACOS.md) | Guía para macOS |
+
+---
+
+*InvoiceFlow v2.0.0 — Universidad de Palermo 2026*
 
 ## 📦 Repositorio Git
-
-El código fuente está disponible en:
-https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
+- El código fuente está disponible en: https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
 
 ### GITHUB
-…or create a new repository on the command line
-echo "# multiagentes_clinicaparque" >> README.md
-- git init
-- git add README.md
-- git commit -m "first commit"
-- git branch -M main
-- git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
-- git push -u origin main
+- or create a new repository on the command line echo "# multiagentes_clinicaparque" >> README.md
 
-…or push an existing repository from the command line
-- git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
-- git branch -M main
-- git push -u origin main
+- - git init
+- - git add README.md
+- - git commit -m "first commit"
+- - git branch -M main
+- - git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
+- - git push -u origin main
 
-credenciales git
+- or push an existing repository from the command line
 
-usr: giselle.fernandezv@gmail.com
-pwd: Calitamendoza1603
+- - git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
+- - git branch -M main
+- - git push -u origin main
+
+#### credenciales git
+
+usr: giselle.fernandezv@gmail.com pwd: Calitamendoza1603

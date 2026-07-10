@@ -1,0 +1,42 @@
+CONTRATO DE PRESTACIÓN DE SERVICIOS TECNOLÓGICOS
+
+Proveedor: TechCorp SA
+CUIT: 30-71234567-0
+Identificador interno: SUP001
+Categoría: Servicios de desarrollo de software y consultoría IT
+
+Fecha de inicio: 2025-01-15
+Fecha de vencimiento: 2026-01-14
+Vigencia: 12 meses, renovación automática por períodos iguales.
+
+OBJETO DEL CONTRATO
+El proveedor se compromete a brindar a la empresa contratante servicios de
+desarrollo de software a medida, mantenimiento de aplicaciones existentes y
+consultoría técnica en proyectos de transformación digital.
+
+CONDICIONES ECONÓMICAS
+Monto máximo autorizado por factura: $150.000 (ciento cincuenta mil pesos).
+Este límite aplica por cada factura individual emitida dentro del período de
+vigencia. Facturas que superen este monto requerirán autorización expresa
+por escrito del Gerente de Compras.
+
+Frecuencia de facturación: mensual.
+Condiciones de pago: a 30 días desde la fecha de recepción conforme de la
+factura. Forma de pago: transferencia bancaria a la cuenta declarada por el
+proveedor.
+
+PENALIDADES POR INCUMPLIMIENTO
+En caso de incumplimiento en los plazos de entrega comprometidos, se aplicará
+una penalidad equivalente al 1% del monto de la factura por cada semana de
+retraso, con un tope del 10% del monto total facturado.
+
+OBLIGACIONES DEL PROVEEDOR
+- Mantener vigente toda la documentación fiscal y laboral.
+- Cumplir con los niveles de servicio acordados (SLA).
+- Notificar cualquier cambio en su situación fiscal o societaria dentro de
+  los 10 días hábiles de producido.
+
+JURISDICCIÓN
+Para cualquier controversia derivada del presente contrato, las partes se
+someten a la jurisdicción de los Tribunales Ordinarios de la Ciudad
+Autónoma de Buenos Aires.

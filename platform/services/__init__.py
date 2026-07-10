@@ -1,1 +1,0 @@
-"""Paquete platform.services — Microservicios."""

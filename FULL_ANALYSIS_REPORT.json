@@ -1,0 +1,311 @@
+{
+  "total_checks": 60,
+  "pass": 60,
+  "fail": 0,
+  "warn": 0,
+  "golden_cases_pass": 6,
+  "golden_cases_total": 6,
+  "pass_rate": 100.0,
+  "results": [
+    {
+      "name": "OBJ-1: Automatizar validacion de facturas",
+      "status": "PASS",
+      "detail": "decision=APPROVED, status=PENDING_PAYMENT"
+    },
+    {
+      "name": "OBJ-2: Verificar proveedores activos",
+      "status": "PASS",
+      "detail": "SUP001 = ACTIVE (TechCorp SA)"
+    },
+    {
+      "name": "OBJ-3: Controlar montos contra limites (RAG)",
+      "status": "PASS",
+      "detail": "REJECTED $160k > $150k limit"
+    },
+    {
+      "name": "OBJ-4: Registrar decisiones para auditoria",
+      "status": "PASS",
+      "detail": "2 registros en payments.db"
+    },
+    {
+      "name": "Agente: orchestrator",
+      "status": "PASS",
+      "detail": "definido en agents/orchestrator.py"
+    },
+    {
+      "name": "Agente: validator_agent",
+      "status": "PASS",
+      "detail": "definido en agents/validator_agent.py"
+    },
+    {
+      "name": "Agente: contract_agent",
+      "status": "PASS",
+      "detail": "definido en agents/contract_agent.py"
+    },
+    {
+      "name": "Agente: payment_agent",
+      "status": "PASS",
+      "detail": "definido en agents/payment_agent.py"
+    },
+    {
+      "name": "Agente: router_agent",
+      "status": "PASS",
+      "detail": "definido en agents/router_agent.py"
+    },
+    {
+      "name": "Agente: invoice_manager_agent",
+      "status": "PASS",
+      "detail": "definido en agents/invoice_manager_agent.py"
+    },
+    {
+      "name": "Agente: external_auditor_agent",
+      "status": "PASS",
+      "detail": "definido en a2a/external_auditor_agent/agent.py"
+    },
+    {
+      "name": "Coordinacion: backend -> supplier-service",
+      "status": "PASS",
+      "detail": "ok"
+    },
+    {
+      "name": "Coordinacion: backend -> contract-service",
+      "status": "PASS",
+      "detail": "ok"
+    },
+    {
+      "name": "Tool: supplier_lookup_tool",
+      "status": "PASS",
+      "detail": "en tools/supplier_mcp_tool.py"
+    },
+    {
+      "name": "Tool: search_contract_tool",
+      "status": "PASS",
+      "detail": "en tools/rag_tool.py"
+    },
+    {
+      "name": "Tool: register_payment_tool",
+      "status": "PASS",
+      "detail": "en tools/payment_db_tool.py"
+    },
+    {
+      "name": "Tool: invoice_status_tool",
+      "status": "PASS",
+      "detail": "en tools/invoice_status_tool.py"
+    },
+    {
+      "name": "Tool: folder_manager_tool",
+      "status": "PASS",
+      "detail": "en tools/folder_manager_tool.py"
+    },
+    {
+      "name": "Tool: pdf_extractor_tool",
+      "status": "PASS",
+      "detail": "en tools/pdf_extractor_tool.py"
+    },
+    {
+      "name": "Tool: ml_risk_tool",
+      "status": "PASS",
+      "detail": "en tools/ml_risk_tool.py"
+    },
+    {
+      "name": "Tool: supplier_lookup funcional",
+      "status": "PASS",
+      "detail": "SUP001 = TechCorp SA"
+    },
+    {
+      "name": "Tool: search_contract funcional (RAG)",
+      "status": "PASS",
+      "detail": "limit=$150,000, within=True"
+    },
+    {
+      "name": "Flujo A: 6 pasos ejecutados",
+      "status": "PASS",
+      "detail": "steps=3, decision=APPROVED"
+    },
+    {
+      "name": "Flujo B: dashboard stats",
+      "status": "PASS",
+      "detail": "inbox=15, approved=2, rejected=1, escalated=0"
+    },
+    {
+      "name": "Flujo B: listar facturas procesadas",
+      "status": "PASS",
+      "detail": "3 registros"
+    },
+    {
+      "name": "Flujo C: chat clasifica intenciones",
+      "status": "PASS",
+      "detail": "keys=['intent', 'message', 'data']"
+    },
+    {
+      "name": "Guardrails: total 25 reglas (esperado 26)",
+      "status": "PASS",
+      "detail": "VR=7, BR=10, SR=5, CR=3"
+    },
+    {
+      "name": "Guardrails: VR estructurales = 7 (esperado 7)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Guardrails: BR negocio = 10 (esperado 10)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Guardrails: SR seguridad = 5 (esperado 5)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "Guardrails: CR continuidad = 3 (esperado 3)",
+      "status": "PASS",
+      "detail": ""
+    },
+    {
+      "name": "VR-03: campos faltantes",
+      "status": "PASS",
+      "detail": "REJECTED por datos incompletos"
+    },
+    {
+      "name": "BR-02: proveedor inactivo",
+      "status": "PASS",
+      "detail": "REJECTED por INACTIVE"
+    },
+    {
+      "name": "BR-05: monto excede limite contractual",
+      "status": "PASS",
+      "detail": "REJECTED: Monto $200,000 excede el límite contractual de $150,000 (con"
+    },
+    {
+      "name": "BR-07: monto > $500k escalado",
+      "status": "PASS",
+      "detail": "ESCALATED + A2A=True"
+    },
+    {
+      "name": "Service Backend (:8000)",
+      "status": "PASS",
+      "detail": "invoiceflow-backend v1.0.0"
+    },
+    {
+      "name": "Service Supplier Service (:8001)",
+      "status": "PASS",
+      "detail": "supplier-service v?"
+    },
+    {
+      "name": "Service Contract Service (:8002)",
+      "status": "PASS",
+      "detail": "contract-service v?"
+    },
+    {
+      "name": "Service External Auditor (:8003)",
+      "status": "PASS",
+      "detail": "external-auditor v1.0.0"
+    },
+    {
+      "name": "Back Office (http://localhost:8000/)",
+      "status": "PASS",
+      "detail": "HTML accesible"
+    },
+    {
+      "name": "Supplier Portal (http://localhost:8000/supplier/)",
+      "status": "PASS",
+      "detail": "HTML accesible (35379 bytes)"
+    },
+    {
+      "name": "API Docs Supplier (:8001/docs)",
+      "status": "PASS",
+      "detail": "Swagger accesible"
+    },
+    {
+      "name": "API Docs Contract (:8002/docs)",
+      "status": "PASS",
+      "detail": "Swagger accesible"
+    },
+    {
+      "name": "ChromaDB: coleccion 'contracts' existe",
+      "status": "PASS",
+      "detail": "1 colecciones"
+    },
+    {
+      "name": "ChromaDB: 21 chunks indexados",
+      "status": "PASS",
+      "detail": "4 contratos x ~5 chunks"
+    },
+    {
+      "name": "RAG query: SUP001 limit",
+      "status": "PASS",
+      "detail": "limit=$150,000"
+    },
+    {
+      "name": "RAG query: SUP002 limit",
+      "status": "PASS",
+      "detail": "limit=$30,000"
+    },
+    {
+      "name": "RAG query: SUP004 limit",
+      "status": "PASS",
+      "detail": "limit=$80,000"
+    },
+    {
+      "name": "RAG query: SUP005 limit",
+      "status": "PASS",
+      "detail": "limit=$200,000"
+    },
+    {
+      "name": "External Auditor: agente accesible",
+      "status": "PASS",
+      "detail": "external_auditor_agent v1.0.0"
+    },
+    {
+      "name": "External Auditor: audit OK",
+      "status": "PASS",
+      "detail": "AUD-1E89B160 -> APPROVE (conf=0.79)"
+    },
+    {
+      "name": "Orchestrator: llama a A2A en ESCALATE",
+      "status": "PASS",
+      "detail": "audit_id=AUD-1F5F03AE"
+    },
+    {
+      "name": "GC001: Factura válida dentro del límite",
+      "status": "PASS",
+      "detail": "got=APPROVED, expected=APPROVED, conf=PAY-A34D"
+    },
+    {
+      "name": "GC002: Factura que supera el límite contractual",
+      "status": "PASS",
+      "detail": "got=REJECTED, expected=REJECTED, conf=PAY-B4F6"
+    },
+    {
+      "name": "GC003: Proveedor inactivo",
+      "status": "PASS",
+      "detail": "got=REJECTED, expected=REJECTED, conf=PAY-7066"
+    },
+    {
+      "name": "GC004: Monto que supera guardrail absoluto ($50",
+      "status": "PASS",
+      "detail": "got=ESCALATED, expected=ESCALATED, conf=PAY-C71F"
+    },
+    {
+      "name": "GC005: Proveedor inexistente",
+      "status": "PASS",
+      "detail": "got=REJECTED, expected=REJECTED, conf=PAY-1014"
+    },
+    {
+      "name": "GC006: Factura con datos incompletos (sin invoi",
+      "status": "PASS",
+      "detail": "got=REJECTED, expected=REJECTED, conf=PAY-4661"
+    },
+    {
+      "name": "Dashboard: estado completo",
+      "status": "PASS",
+      "detail": "3+8+3 decisiones"
+    },
+    {
+      "name": "Persistencia: payments.db con confirmation_ids",
+      "status": "PASS",
+      "detail": "14 confirmation_ids"
+    }
+  ]
+}

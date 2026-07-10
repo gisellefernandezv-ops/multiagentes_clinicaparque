@@ -22,9 +22,9 @@ def main():
     
     # Servicios a iniciar
     services = [
-        ("Supplier Service (8001)", [sys.executable, "-m", "platform.services.supplier_service.main"]),
-        ("Contract Service (8002)", [sys.executable, "-m", "platform.services.contract_service.main"]),
-        ("Backend (8000)", [sys.executable, "-m", "uvicorn", "platform.backend.main:app", "--host", "127.0.0.1", "--port", "8000"]),
+        ("Supplier Service (8001)", [sys.executable, "-m", "app.services.supplier_service.main"]),
+        ("Contract Service (8002)", [sys.executable, "-m", "app.services.contract_service.main"]),
+        ("Backend (8000)", [sys.executable, "-m", "uvicorn", "app.backend.main:app", "--host", "127.0.0.1", "--port", "8000"]),
     ]
     
     for name, cmd in services:

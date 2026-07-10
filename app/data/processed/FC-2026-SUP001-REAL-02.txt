@@ -1,0 +1,57 @@
+================================================================================
+                            [FACTURA B]
+================================================================================
+
+[EMISOR]
+Razon Social:    TechCorp Argentina SA
+Rubro/Matricula: Servicios de desarrollo de software
+Direccion:       Av. Libertador 5000, CABA
+CUIT:            30-71234567-0
+Ing. Brutos:     901-123456-7
+Inicio Act.:     01/2015
+Condicion IVA:   IVA Responsable Inscripto
+
+================================================================================
+CODIGO Nº 06                            FACTURA
+                                       Nº 0001 - 00000002
+FECHA: 28/06/2026
+================================================================================
+
+[RECEPTOR]
+Señor/es:     EMPRESA DEMO SA
+Dirección:    Av. Corrientes 1234, Piso 5
+Localidad:    CABA (1414)
+CUIT:         30-12345678-9
+Condicion IVA: IVA Responsable Inscripto
+
+Condiciones de Venta: Contado    [X]
+                      Cta. Cte.   [ ]
+
+Remito Nº:    -
+
+================================================================================
+CANT.  DESCRIPCION                              P. UNITARIO       IMPORTE
+================================================================================
+   1   Soporte técnico premium mensual               35.000,00       35.000,00
+   1   Licencia de software mensual                  45.000,00       45.000,00
+   1   Auditoría de código fuente                    80.000,00       80.000,00
+================================================================================
+
+                                                            TOTAL $     160.000,00
+================================================================================
+
+[FISCAL]
+CAE:          22226300514837
+Vencimiento:  15/01/2027
+Codigo Barras: 3071234567000010222263005148
+
+ORIGINAL BLANCO - DUPLICADO COLOR
+
+--------------------------------------------------------------------------------
+Impreso por C5 Digital S.A. - C.U.I.T. 30-71097277-6 Exp. 421836/2010
+Fecha de Imp. Diciembre 2016 - Imp. del 0001-0000001 al 0001-0000100
+www.c5imprenta.com.ar - 4522-0600 lineas rotativas.
+--------------------------------------------------------------------------------
+
+              147 "Telefono Gratuito CABA, Area de Defensa
+                       y Proteccion al Consumidor".

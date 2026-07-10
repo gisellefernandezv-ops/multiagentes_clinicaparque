@@ -1,0 +1,56 @@
+================================================================================
+                            [FACTURA C]
+================================================================================
+
+[EMISOR]
+Razon Social:    Papelería Norte SRL
+Rubro/Matricula: Venta de insumos de oficina
+Direccion:       Av. Cabildo 3000, CABA
+CUIT:            30-69874523-1
+Ing. Brutos:     901-987654-3
+Inicio Act.:     05/2010
+Condicion IVA:   Monotributo
+
+================================================================================
+CODIGO Nº 11                          FACTURA C
+                                       Nº 0001 - 00000012
+FECHA: 28/06/2026
+================================================================================
+
+[RECEPTOR]
+Señor/es:     EMPRESA DEMO SA
+Dirección:    Av. Corrientes 1234, Piso 5
+Localidad:    CABA (1414)
+CUIT:         30-12345678-9
+Condicion IVA: IVA Responsable Inscripto
+
+Condiciones de Venta: Contado    [X]
+                      Cta. Cte.   [ ]
+
+Remito Nº:    -
+
+================================================================================
+CANT.  DESCRIPCION                                 P. UNITARIO         IMPORTE
+================================================================================
+   3   Cuaderno universitario x 50u                        15.000,00             45.000,00
+   1   Resma A4 80gr Caja x 10u                             8.500,00              8.500,00
+================================================================================
+
+                                                            TOTAL $            53.500,00
+================================================================================
+
+[FISCAL]
+CAE:          03050385271695
+Vencimiento:  15/01/2027
+Codigo Barras: 3069874523100010030503852716
+
+ORIGINAL BLANCO - DUPLICADO COLOR
+
+--------------------------------------------------------------------------------
+Impreso por C5 Digital S.A. - C.U.I.T. 30-71097277-6 Exp. 421836/2010
+Fecha de Imp. Diciembre 2016 - Imp. del 0001-0000001 al 0001-0000100
+www.c5imprenta.com.ar - 4522-0600 lineas rotativas.
+--------------------------------------------------------------------------------
+
+              147 "Telefono Gratuito CABA, Area de Defensa
+                       y Proteccion al Consumidor".

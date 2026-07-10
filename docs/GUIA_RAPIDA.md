@@ -1,97 +1,69 @@
-# InvoiceFlow — Guía de Instalación
+# InvoiceFlow — Guía Rápida
 
-Bienvenido al sistema InvoiceFlow. Seleccioná tu sistema operativo para ver las instrucciones:
-
----
-
-## 📘 [Guía para Windows](INSTALACION_WINDOWS.md)
-
-Instalación paso a paso para usuarios de Windows 10/11.
-
-**Contenido:**
-- Cómo instalar Python
-- Descargar el proyecto
-- Instalar dependencias
-- Iniciar el sistema
-- Solución de problemas comunes
-
-👉 [Ir a la guía de Windows](INSTALACION_WINDOWS.md)
+> Referencia rápida para iniciar el sistema en minutos.
 
 ---
 
-## 🐧 [Guía para Linux](INSTALACION_LINUX.md)
+## 🚀 Inicio Rápido
 
-Instalación paso a paso para distribuciones Ubuntu, Fedora, Arch, etc.
-
-**Contenido:**
-- Verificar Python
-- Instalar con apt/dnf/pacman
-- Clonar repositorio
-- Crear entorno virtual
-- Iniciar servicios
-
-👉 [Ir a la guía de Linux](INSTALACION_LINUX.md)
-
----
-
-## 🍎 [Guía para macOS](INSTALACION_MACOS.md)
-
-Instalación paso a paso para Mac con chips Intel o Apple Silicon.
-
-**Contenido:**
-- Instalar Homebrew
-- Instalar Python y Git
-- Descargar el proyecto
-- Crear entorno virtual
-- Iniciar el sistema
-
-👉 [Ir a la guía de macOS](INSTALACION_MACOS.md)
-
----
-
-## 🚀 Inicio Rápido (Para usuarios avanzados)
+### 1. Clonar o Descargar
 
 ```bash
-# Clonar repositorio
 git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
-
-# Entrar a la carpeta
 cd invoice_approval_system
+```
 
+### 2. Instalar Dependencias
+
+```bash
 # Crear entorno virtual
-python3 -m venv .venv
+python -m venv .venv
 
-# Activar entorno
-source .venv/bin/activate  # Linux/macOS
-.venv\Scripts\activate   # Windows
+# Activar
+.venv\Scripts\activate          # Windows
+source .venv/bin/activate        # Linux/macOS
 
-# Instalar dependencias
+# Instalar
 pip install -r requirements.txt
+```
 
-# Iniciar servicios
-python -m platform.backend.main
+### 3. Configurar
+
+```bash
+cp .env.example .env
+# Editar .env y agregar: GOOGLE_API_KEY=tu_api_key
+```
+
+### 4. Iniciar (3 terminales)
+
+```bash
+# Terminal 1 - Supplier Service
 python -m platform.services.supplier_service.main
+
+# Terminal 2 - Contract Service  
 python -m platform.services.contract_service.main
+
+# Terminal 3 - Backend
+cd platform/backend && python main.py
 ```
 
 ---
 
 ## 🌐 URLs del Sistema
 
-Una vez iniciado, accedé desde el navegador:
-
 | Servicio | URL |
 |----------|-----|
 | **Back Office** | http://localhost:8000/ |
-| **Portal del Proveedor** | http://localhost:8000/supplier/ |
-| **API Backend** | http://localhost:8001/docs |
-| **API Contracts** | http://localhost:8002/docs |
+| **Supplier Portal** | http://localhost:8000/supplier/ |
+| **API Backend** | http://localhost:8000/docs |
+| **API Supplier** | http://localhost:8001/docs |
+| **API Contract** | http://localhost:8002/docs |
 
 ---
 
-## 🔑 Datos de Prueba
+## 🔑 Login de Prueba
 
-Para probar el sistema, usá estos IDs de proveedor:
+Usar estos IDs de proveedor:
 
 | ID | Nombre | Estado |
 |----|--------|--------|
@@ -103,47 +75,84 @@ Para probar el sistema, usá estos IDs de proveedor:
 
 ---
 
-## ❓ Problemas Comunes
+## 📋 Ejemplo de Factura (JSON)
 
-### "Python no encontrado"
-- **Windows**: Reinstalar Python marcando "Add to PATH"
-- **Linux**: `sudo apt install python3 python3-venv`
-- **macOS**: `brew install python@3.12`
+```json
+{
+  "invoice_id": "INV-001",
+  "supplier_id": "SUP001",
+  "supplier_name": "TechCorp SA",
+  "amount": 50000,
+  "currency": "ARS",
+  "invoice_date": "2025-06-01"
+}
+```
 
-### "Puerto en uso"
+### Decisiones Posibles
+
+| Decisión | Significado |
+|----------|-------------|
+| `APPROVED` | Factura validada, lista para pago |
+| `REJECTED` | Factura rechazada (ver motivo) |
+| `ESCALATED` | Requiere revisión humana |
+
+---
+
+## 🔧 Comandos Útiles
+
+### Health Check
 ```bash
-# Linux/macOS
-lsof -i :8000
-kill -9 <PID>
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+```
 
+### Verificar Componentes
+```bash
+python -m guardrails.invoice_guardrail
+python -m evaluation.metrics
+```
+
+### Detener Servicios
+```bash
 # Windows
-netstat -ano | findstr :8000
-taskkill /PID <PID> /F
-```
+taskkill /F /IM python.exe
 
-### "Dependencias no instaladas"
-```bash
-pip install -r requirements.txt
+# Linux/macOS
+pkill -f "python.*platform"
 ```
 
 ---
 
-## 📚 Documentación Adicional
+## ❓ Solución Rápida de Problemas
 
-- [README.md](../README.md) — Descripción general del sistema
-- [CHANGELOG.md](../CHANGELOG.md) — Historial de cambios
-- [CASOS_DE_USO.md](../CASOS_DE_USO.md) — Casos de uso y flujos
-
----
-
-## 🆘 Necesitás ayuda?
-
-1. Revisar la guía de tu sistema operativo
-2. Verificar que Python esté instalado (`python --version`)
-3. Asegurarte de activar el entorno virtual antes de instalar
-4. Revisar los logs en la terminal para identificar errores
+| Error | Solución |
+|-------|----------|
+| `python not found` | Reinstalar Python marcando "Add to PATH" |
+| `Port in use` | `netstat -ano \| findstr :8000` → matar proceso |
+| `Module not found` | Activar entorno virtual (`.venv\Scripts\activate`) |
+| `Dependencias faltantes` | `pip install -r requirements.txt` |
 
 ---
 
-**Versión del sistema**: 1.0.0
-**Última actualización**: 2025
+## 📚 Documentación Completa
+
+| Archivo | Descripción |
+|---------|-------------|
+| [README.md](../README.md) | Descripción general y arquitectura |
+| [CHANGELOG.md](../CHANGELOG.md) | Historial de cambios |
+| [INSTALL.md](../INSTALL.md) | Guía de instalación detallada |
+| [especificacion_sistema_invoiceflow.md](./especificacion_sistema_invoiceflow.md) | Especificación técnica |
+| [documento_guardrails_invoiceflow.md](./documento_guardrails_invoiceflow.md) | Sistema de guardrails |
+
+---
+
+## 📞 Guías por Sistema Operativo
+
+- [Windows](INSTALACION_WINDOWS.md) — Instalación paso a paso
+- [Linux](INSTALACION_LINUX.md) — Instalación paso a paso
+- [macOS](INSTALACION_MACOS.md) — Instalación paso a paso
+
+---
+
+**Versión**: 1.0.0 | **Última actualización**: 2025-06-20

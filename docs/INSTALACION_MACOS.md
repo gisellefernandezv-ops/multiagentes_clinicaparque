@@ -1,206 +1,212 @@
 # InvoiceFlow — Guía de Instalación para macOS
 
-## 📋 Requisitos Previos
+## Tabla de Contenidos
+
+1. [Requisitos Previos](#1-requisitos-previos)
+2. [Instalación Paso a Paso](#2-instalación-paso-a-paso)
+3. [Inicio del Sistema](#3-inicio-del-sistema)
+4. [Acceso y Verificación](#4-acceso-y-verificación)
+5. [Solución de Problemas](#5-solución-de-problemas)
+6. [Estructura de Archivos](#6-estructura-de-archivos)
+
+---
+
+## 1. Requisitos Previos
 
 ### Software Necesario
-1. **Python 3.12+** — Se instala con Homebrew
-2. **Git** — Se instala con Homebrew
-3. **Homebrew** — Gestor de paquetes para macOS
+
+| Software | Instalación | Comando |
+|----------|-------------|---------|
+| **Homebrew** | Gestor de paquetes | [brew.sh](https://brew.sh/) |
+| **Python** | 3.12+ | `brew install python@3.12` |
+| **Git** | Opcional | `brew install git` |
+
+### Instalar Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Instalar Python y Git
+
+```bash
+brew install python@3.12
+brew install git
+```
+
+### Verificar Instalación
+
+```bash
+python3 --version
+git --version
+brew --version
+```
 
 ---
 
-## 🚀 Instalación Paso a Paso
+## 2. Instalación Paso a Paso
 
-### Paso 1: Instalar Homebrew
-
-1. **Abrir Terminal**:
-   - Presionar `Cmd + Espacio`
-   - Buscar "Terminal" y abrirla
-
-2. **Instalar Homebrew** (si no lo tenés):
-   ```bash
-   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-   ```
-
-3. **Verificar** instalación:
-   ```bash
-   brew --version
-   ```
-
----
-
-### Paso 2: Instalar Python y Git
-
-1. **Instalar** Python:
-   ```bash
-   brew install python@3.12
-   ```
-
-2. **Instalar** Git (si no lo tenés):
-   ```bash
-   brew install git
-   ```
-
-3. **Verificar** versiones:
-   ```bash
-   python3 --version
-   git --version
-   ```
-
----
-
-### Paso 3: Descargar el Proyecto
+### Paso 1: Descargar el Proyecto
 
 #### Opción A: Clonar con Git (Recomendado)
 
-1. **En Terminal**, navegar al escritorio:
-   ```bash
-   cd ~/Desktop
-   ```
+```bash
+# Ir al escritorio
+cd ~/Desktop
 
-2. **Clonar** el repositorio:
-   ```bash
-   git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
-   ```
+# Clonar repositorio
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
 
-3. **Entrar** a la carpeta:
-   ```bash
-   cd invoice_approval_system
-   ```
+# Entrar a la carpeta
+cd invoice_approval_system
+```
 
 #### Opción B: Descargar ZIP
 
-1. **Ir a** [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
+1. Ir a [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
+2. Click en **"<> Code"** → **"Download ZIP"**
+3. Guardar en Escritorio
+4. Extraer el ZIP
 
-2. **Click** en el botón verde **"<> Code"**
+### Paso 2: Crear Entorno Virtual
 
-3. **Click** en **"Download ZIP"**
+```bash
+cd ~/Desktop/invoice_approval_system
 
-4. **Extraer** el archivo:
-   ```bash
-   cd ~/Desktop
-   unzip multiagentes_clinicaparque-main.zip -d ~/Desktop
-   mv ~/Desktop/multiagentes_clinicaparque-main ~/Desktop/invoice_approval_system
-   ```
+# Crear entorno virtual
+python3 -m venv .venv
+
+# Activar entorno
+source .venv/bin/activate
+```
+
+> ✅ Verás `(.venv)` al inicio de la línea
+
+### Paso 3: Instalar Dependencias
+
+```bash
+# Actualizar pip
+pip install --upgrade pip
+
+# Instalar dependencias
+pip install -r requirements.txt
+```
+
+> ⏳ Puede tardar 3-5 minutos
+
+### Paso 4: Configurar Variables de Entorno
+
+```bash
+# Copiar plantilla
+cp .env.example .env
+
+# Editar
+nano .env
+```
+
+Agregar tu API Key de Google:
+```env
+GOOGLE_API_KEY=tu_api_key_aqui
+```
+
+Guardar con `Ctrl + O`, `Enter`, `Ctrl + X`
+
+### Paso 5: Indexar Contratos (Primera vez)
+
+```bash
+python rag/ingest.py
+```
 
 ---
 
-### Paso 4: Crear Entorno Virtual
+## 3. Inicio del Sistema
 
-1. **Navegar** a la carpeta del proyecto:
-   ```bash
-   cd ~/Desktop/invoice_approval_system
-   ```
+### Método Automático
 
-2. **Crear** entorno virtual:
-   ```bash
-   python3 -m venv .venv
-   ```
+```bash
+# Dar permisos al script
+chmod +x INICIAR.sh
 
-3. **Activar** el entorno:
-   ```bash
-   source .venv/bin/activate
-   ```
+# Ejecutar
+./INICIAR.sh
+```
 
-   > ✅ Verás que aparece `(.venv)` al inicio de la línea
+### Método Manual (3 terminales)
 
----
+#### Terminal 1 — Supplier Service (Puerto 8001)
 
-### Paso 5: Instalar Dependencias
-
-1. **Con el entorno virtual activado**, instalar:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-   > ⏳ Esto puede tardar 3-5 minutos
-
-2. **Verificar** instalación:
-   ```bash
-   pip list | grep -E "fastapi|uvicorn|chromadb"
-   ```
-
----
-
-### Paso 6: Iniciar el Sistema
-
-#### Método Automático
-
-1. **Dar permisos** al script:
-   ```bash
-   chmod +x INICIAR.sh
-   ```
-
-2. **Ejecutar**:
-   ```bash
-   ./INICIAR.sh
-   ```
-
-#### Método Manual (3 terminales)
-
-**Terminal 1 — Supplier Service (puerto 8001)**:
 ```bash
 cd ~/Desktop/invoice_approval_system
 source .venv/bin/activate
-python3 -m platform.services.supplier_service.main
+python -m platform.services.supplier_service.main
 ```
 
-**Terminal 2 — Contract Service (puerto 8002)**:
+#### Terminal 2 — Contract Service (Puerto 8002)
+
 ```bash
 cd ~/Desktop/invoice_approval_system
 source .venv/bin/activate
-python3 -m platform.services.contract_service.main
+python -m platform.services.contract_service.main
 ```
 
-**Terminal 3 — Backend (puerto 8000)**:
+#### Terminal 3 — Backend (Puerto 8000)
+
 ```bash
 cd ~/Desktop/invoice_approval_system/platform/backend
 source .venv/bin/activate
-python3 main.py
+python main.py
 ```
 
 ---
 
-## 🌐 Acceso al Sistema
+## 4. Acceso y Verificación
 
-Abrir el navegador Safari, Chrome o Firefox y visitar:
+### URLs del Sistema
 
 | Servicio | URL |
 |----------|-----|
-| **Back Office** | [http://localhost:8000/](http://localhost:8000/) |
-| **Portal del Proveedor** | [http://localhost:8000/supplier/](http://localhost:8000/supplier/) |
-| **API Backend** | [http://localhost:8001/docs](http://localhost:8001/docs) |
-| **API Contracts** | [http://localhost:8002/docs](http://localhost:8002/docs) |
+| **Back Office** | http://localhost:8000/ |
+| **Supplier Portal** | http://localhost:8000/supplier/ |
+| **API Backend** | http://localhost:8000/docs |
+| **API Supplier** | http://localhost:8001/docs |
+| **API Contract** | http://localhost:8002/docs |
 
----
+### Health Checks
 
-## 🧪 Probar el Sistema
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+```
 
 ### Login como Proveedor
 
-1. Abrir [http://localhost:8000/supplier/](http://localhost:8000/supplier/)
+1. Abrir http://localhost:8000/supplier/
 
-2. Ingresar uno de estos IDs:
-   ```
-   SUP001
-   SUP002
-   SUP003
-   SUP004
-   SUP005
-   ```
+2. Ingresar ID de prueba:
 
-3. Hacer clic en "Ingresar"
+| ID | Nombre | Estado |
+|----|--------|--------|
+| SUP001 | TechCorp SA | ACTIVE |
+| SUP002 | Papeleria Norte SRL | ACTIVE |
+| SUP003 | Servicios Rapidos SA | INACTIVE |
+| SUP004 | Limpieza Total SRL | ACTIVE |
+| SUP005 | Consultoria Digital SA | ACTIVE |
 
 ---
 
-## 🔧 Solución de Problemas
+## 5. Solución de Problemas
 
 ### Error: "Command not found: python3"
 
 **Solución**:
 ```bash
-# Agregar Python al PATH
+# Agregar Python al PATH (para Apple Silicon)
+echo 'export PATH="/opt/homebrew/opt/python@3.12/bin:$PATH"' >> ~/.zshrc
+
+# O para Intel Mac
 echo 'export PATH="/usr/local/opt/python@3.12/bin:$PATH"' >> ~/.zshrc
+
 source ~/.zshrc
 ```
 
@@ -213,11 +219,9 @@ source ~/.zshrc
 xcode-select --install
 ```
 
-Luego seguir las instrucciones en pantalla.
-
 ---
 
-### Error: "Permission denied"
+### Error: "Permission denied" al ejecutar script
 
 **Solución**:
 ```bash
@@ -234,8 +238,13 @@ chmod +x INICIAR.sh
 # Ver qué usa el puerto
 lsof -i :8000
 
-# Matar el proceso (reemplazar PID)
-kill -9 <PID>
+# Matar el proceso (ejemplo: PID 1234)
+kill -9 1234
+```
+
+Para matar todos los procesos Python del proyecto:
+```bash
+pkill -f "python.*platform"
 ```
 
 ---
@@ -253,31 +262,41 @@ brew doctor
 
 ---
 
-## 📁 Estructura de Archivos
+## 6. Estructura de Archivos
 
 ```
 ~/Desktop/invoice_approval_system/
-├── README.md
-├── requirements.txt
-├── INICIAR.sh               ← Script de inicio
-├── platform/
-│   ├── backend/            ← Servidor principal (8000)
-│   ├── frontend/          ← Back Office
-│   └── services/         ← Microservicios
-├── supplier_portal/      ← Portal del proveedor
-├── agents/               ← Agentes del sistema
-├── tools/                 ← Herramientas
-├── guardrails/            ← Reglas de validación
-└── data/                  ← Base de datos
+├── README.md                   # Documentación principal
+├── CHANGELOG.md               # Historial de cambios
+├── requirements.txt           # Dependencias Python
+│
+├── INICIAR.sh                # Script de inicio automático
+├── setup.sh                  # Script de instalación
+│
+├── platform/                  # Backend y servicios
+│   ├── backend/              # Servidor principal (8000)
+│   ├── frontend/            # Back Office
+│   └── services/            # Microservicios
+│
+├── agents/                   # Agentes ADK
+├── tools/                   # Herramientas
+├── guardrails/              # Sistema de guardrails
+├── rag/                     # RAG (ChromaDB)
+├── ml/                      # Machine Learning
+├── supplier_portal/         # Portal del proveedor
+├── a2a/                     # Agente A2A externo
+├── data/                    # Datos persistentes
+└── docs/                    # Documentación adicional
 ```
 
 ---
 
 ## 🛑 Detener el Sistema
 
+### Método 1: Cmd + C
 En cada terminal, presionar `Cmd + C`
 
-O matar todos los procesos Python:
+### Método 2: Matar procesos
 ```bash
 pkill -f "python.*platform"
 ```
@@ -291,6 +310,7 @@ pkill -f "python.*platform"
 - [ ] Git instalado (`git --version`)
 - [ ] Entorno virtual activado (`.venv` visible)
 - [ ] Dependencias instaladas (`pip list`)
+- [ ] Archivo `.env` con `GOOGLE_API_KEY`
 - [ ] 3 terminales corriendo
 - [ ] Navegador en `http://localhost:8000/`
 
@@ -298,11 +318,32 @@ pkill -f "python.*platform"
 
 ## 📞 Necesitas Ayuda?
 
-1. Revisar la sección de [Solución de Problemas](#-solución-de-problemas)
-2. Verificar que cumples todos los [requisitos previos](#-requisitos-previos)
-3. Revisar el archivo CHANGELOG.md para cambios recientes
+1. Revisar la sección de [Solución de Problemas](#5-solución-de-problemas)
+2. Verificar que cumples todos los requisitos
+3. Revisar logs en las terminales para identificar errores
 
 ---
 
-**Última actualización**: 2025
-**Versión del sistema**: 1.0.0
+## Notas para Apple Silicon (M1/M2/M3)
+
+Si tienes un Mac con chip Apple Silicon, algunos paquetes binarios pueden necesitar Rosetta:
+
+```bash
+# Instalar Rosetta (si es necesario)
+softwareupdate --install-rosetta
+```
+
+---
+
+## Enlaces Útiles
+
+| Recurso | URL |
+|---------|-----|
+| Repositorio GitHub | https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque |
+| Documentación ADK | https://google.github.io/adk-docs/ |
+| Homebrew | https://brew.sh/ |
+
+---
+
+**Versión del sistema**: 1.0.0  
+**Última actualización**: 2025-06-20

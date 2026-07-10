@@ -1,68 +1,201 @@
-# InvoiceFlow — Guía de Instalación
+# InvoiceFlow — Guía de Instalación Completa
 
-## Requisitos del Sistema
-
-### Software Necesario
-- **Python 3.12+** (recomendado: 3.12.x)
-- **Git** (opcional, para clonar el repositorio)
-- **Windows 10/11** o **Linux/macOS**
-
-### Verificar Python
-```bash
-python --version
-# Debe mostrar: Python 3.12.x
-```
+> Instalación paso a paso para Windows, Linux y macOS.
 
 ---
 
-## Instalación Paso a Paso
+## Tabla de Contenidos
 
-### 1. Obtener el Proyecto
+1. [Requisitos del Sistema](#1-requisitos-del-sistema)
+2. [Instalación en Windows](#2-instalación-en-windows)
+3. [Instalación en Linux](#3-instalación-en-linux)
+4. [Instalación en macOS](#4-instalación-en-macos)
+5. [Configuración Inicial](#5-configuración-inicial)
+6. [Inicio del Sistema](#6-inicio-del-sistema)
+7. [Verificación](#7-verificación)
+8. [Resolución de Problemas](#8-resolución-de-problemas)
 
-Si ya tienes el proyecto en tu máquina, navega al directorio:
+---
+
+## 1. Requisitos del Sistema
+
+### Software Requerido
+
+| Componente | Versión Mínima | Notas |
+|------------|---------------|-------|
+| **Python** | 3.12+ | Requerido por google-adk 2.3 |
+| **pip** |Última | Gestor de paquetes Python |
+| **Git** | 2.0+ | Opcional, para clonar repositorio |
+
+### Verificar Python
+
 ```bash
-cd C:\Users\gisel\OneDrive\Escritorio\tp_multiagentes\invoice_approval_system
+# Windows
+python --version
+
+# Linux/macOS
+python3 --version
 ```
 
-### 2. Crear un Entorno Virtual (Recomendado)
+Debería mostrar: `Python 3.12.x`
+
+---
+
+## 2. Instalación en Windows
+
+### Paso 1: Instalar Python
+
+1. Descargar desde [python.org/downloads/windows/](https://www.python.org/downloads/windows/)
+2. Ejecutar el instalador
+3. **IMPORTANTE**: Marcar `☑ Add Python to PATH`
+4. Click en "Install Now"
+
+### Paso 2: Descargar el Proyecto
+
+**Opción A: ZIP**
+1. Descargar desde GitHub
+2. Extraer en Escritorio
+3. Renombrar a `invoice_approval_system`
+
+**Opción B: Git**
+```bash
+cd Desktop
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
+```
+
+### Paso 3: Crear Entorno Virtual
 
 ```bash
-# Crear entorno virtual
+cd Desktop\invoice_approval_system
 python -m venv .venv
-
-# Activar entorno (Windows)
 .venv\Scripts\activate
-
-# Activar entorno (Linux/macOS)
-source .venv/bin/activate
 ```
 
-### 3. Instalar Dependencias
+### Paso 4: Instalar Dependencias
 
 ```bash
 pip install -r requirements.txt
 ```
 
-El archivo `requirements.txt` incluye:
-```
-fastapi>=0.100.0
-uvicorn>=0.23.0
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-httpx>=0.24.0
-chromadb>=0.4.0
-google-adk>=0.1.0
-google-generativeai>=0.3.0
-watchdog>=3.0.0
-python-multipart>=0.0.6
+### Paso 5: Scripts Automatizados
+
+| Script | Función |
+|--------|---------|
+| `setup.bat` | Instala todo automáticamente |
+| `INICIAR.bat` | Inicia los 3 servicios |
+| `smoke_test.bat` | Verifica componentes |
+
+---
+
+## 3. Instalación en Linux
+
+### Paso 1: Verificar/Instalar Python
+
+```bash
+# Ubuntu/Debian
+sudo apt update
+sudo apt install python3 python3-pip python3-venv
+
+# Fedora
+sudo dnf install python3 python3-pip
+
+# Arch
+sudo pacman -S python python-pip
 ```
 
-### 4. Configurar Variables de Entorno (Opcional)
+### Paso 2: Descargar el Proyecto
 
-Crea un archivo `.env` en la raíz del proyecto:
+```bash
+cd ~
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
+```
+
+### Paso 3: Crear Entorno Virtual
+
+```bash
+cd ~/invoice_approval_system
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Paso 4: Instalar Dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+### Paso 5: Scripts Automatizados
+
+```bash
+chmod +x INICIAR.sh
+./INICIAR.sh
+```
+
+---
+
+## 4. Instalación en macOS
+
+### Paso 1: Instalar Homebrew
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+### Paso 2: Instalar Python y Git
+
+```bash
+brew install python@3.12
+brew install git
+```
+
+### Paso 3: Descargar el Proyecto
+
+```bash
+cd ~/Desktop
+git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
+```
+
+### Paso 4: Crear Entorno Virtual
+
+```bash
+cd ~/Desktop/invoice_approval_system
+python3 -m venv .venv
+source .venv/bin/activate
+```
+
+### Paso 5: Instalar Dependencias
+
+```bash
+pip install -r requirements.txt
+```
+
+### Paso 6: Scripts Automatizados
+
+```bash
+chmod +x INICIAR.sh
+./INICIAR.sh
+```
+
+---
+
+## 5. Configuración Inicial
+
+### 5.1 Variables de Entorno
+
+Crear archivo `.env` en la raíz del proyecto:
+
+```bash
+# Copiar plantilla
+cp .env.example .env
+
+# Editar
+# Agregar: GOOGLE_API_KEY=tu_api_key
+```
+
+### 5.2 Archivo .env
 
 ```env
-# API Keys (requeridas para RAG y ADK)
+# API Keys (requeridas)
 GOOGLE_API_KEY=tu_api_key_de_google
 
 # Configuración de servicios
@@ -77,240 +210,201 @@ INV_HOST=127.0.0.1
 INV_ENABLE_WATCHER=true
 ```
 
-### 5. Verificar la Instalación
+### 5.3 Indexar Contratos (Primera vez)
 
 ```bash
-# Ejecutar test de imports
-python test_import.py
-```
-
-Deberías ver:
-```
-✓ FastAPI importado
-✓ Pydantic importado
-✓ ChromaDB importado
-✓ Google ADK importado
-✓ Todos los módulos principales OK
+python rag/ingest.py
 ```
 
 ---
 
-## Iniciar el Sistema
+## 6. Inicio del Sistema
 
-### Método Automático (Recomendado)
+### Arquitectura de Puertos
 
-Simplemente ejecuta el script de inicio:
-
-```bash
-# Windows
-INICIAR.bat
-
-# Linux/macOS
-chmod +x INICIAR.sh
-./INICIAR.sh
+```
+┌─────────────────────────────────────────────────────────────┐
+│                     localhost                               │
+├─────────────────────────────────────────────────────────────┤
+│  Puerto 8000 ──────► Backend (FastAPI)                     │
+│                        ├── Back Office                       │
+│                        ├── Supplier Portal                   │
+│                        └── API REST                         │
+│                                                              │
+│  Puerto 8001 ──────► Supplier Service                       │
+│                                                              │
+│  Puerto 8002 ──────► Contract Service                       │
+│                                                              │
+│  Puerto 8003 ──────► External Auditor (A2A) [opcional]     │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-Esto abrirá 3 ventanas de terminal con los servicios.
+### Método Automático
 
-### Método Manual
+Ejecutar el script correspondiente:
+- **Windows**: `INICIAR.bat`
+- **Linux/macOS**: `./INICIAR.sh`
 
-Abre 3 terminales separadas y ejecuta en cada una:
+### Método Manual (3 terminales)
 
-**Terminal 1 - Supplier Service (Puerto 8001)**
 ```bash
-cd C:\Users\gisel\OneDrive\Escritorio\tp_multiagentes\invoice_approval_system
+# Terminal 1 - Supplier Service
 python -m platform.services.supplier_service.main
-```
+# Puerto: 8001
 
-**Terminal 2 - Contract Service (Puerto 8002)**
-```bash
-cd C:\Users\gisel\OneDrive\Escritorio\tp_multiagentes\invoice_approval_system
+# Terminal 2 - Contract Service
 python -m platform.services.contract_service.main
-```
+# Puerto: 8002
 
-**Terminal 3 - Backend (Puerto 8000)**
-```bash
-cd C:\Users\gisel\OneDrive\Escritorio\tp_multiagentes\invoice_approval_system
-cd platform\backend
+# Terminal 3 - Backend
+cd platform/backend
 python main.py
+# Puerto: 8000
 ```
 
 ---
 
-## Verificar que Todo Funciona
+## 7. Verificación
+
+### URLs del Sistema
+
+| Servicio | URL | Descripción |
+|----------|-----|-------------|
+| **Back Office** | http://localhost:8000/ | Panel de administración |
+| **Supplier Portal** | http://localhost:8000/supplier/ | Portal del proveedor |
+| **API Docs** | http://localhost:8000/docs | Documentación Swagger |
 
 ### Health Checks
 
-Abre tu navegador y verifica cada servicio:
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8001/health
+curl http://localhost:8002/health
+```
 
-| Servicio | URL | Respuesta Esperada |
-|----------|-----|-------------------|
-| Backend | http://localhost:8000/ | Página del Back Office |
-| Supplier Portal | http://localhost:8000/supplier/ | Portal del Proveedor |
-| Supplier Service | http://localhost:8001/health | `{"service":"supplier-service",...}` |
-| Contract Service | http://localhost:8002/health | `{"service":"contract-service",...}` |
+### Login de Prueba
 
-### API Documentation
+| ID | Nombre | Estado |
+|----|--------|--------|
+| SUP001 | TechCorp SA | ACTIVE |
+| SUP002 | Papeleria Norte SRL | ACTIVE |
+| SUP003 | Servicios Rapidos SA | INACTIVE |
+| SUP004 | Limpieza Total SRL | ACTIVE |
+| SUP005 | Consultoria Digital SA | ACTIVE |
 
-- FastAPI Docs (Backend): http://localhost:8000/docs
-- Supplier Service: http://localhost:8001/docs
-- Contract Service: http://localhost:8002/docs
-
----
-
-## Datos de Prueba
-
-### Proveedores de Demo
-
-El sistema incluye 5 proveedores de prueba:
-
-| ID | Nombre | CUIT | Estado |
-|----|---------|------|--------|
-| SUP001 | TechCorp SA | 30-71234567-0 | ACTIVE |
-| SUP002 | Papeleria Norte SRL | 30-69874523-1 | ACTIVE |
-| SUP003 | Servicios Rapidos SA | 30-70111222-3 | INACTIVE |
-| SUP004 | Limpieza Total SRL | 30-70555666-7 | ACTIVE |
-| SUP005 | Consultoria Digital SA | 30-71234999-2 | ACTIVE |
-
-### Facturas de Prueba
-
-El directorio `data/new invoices/` contiene facturas de prueba:
-- `FC-2026-SUP001-NUEVA-1.txt`
-- `FC-2026-SUP002-NUEVA-1.txt`
-- etc.
-
----
-
-## Resolución de Problemas
-
-### Error: "Module not found"
+### Smoke Tests
 
 ```bash
+python -m guardrails.invoice_guardrail
+python -m evaluation.metrics
+```
+
+---
+
+## 8. Resolución de Problemas
+
+### Error: "ModuleNotFoundError"
+
+```bash
+# Asegurarse que el entorno virtual está activo
+.venv\Scripts\activate  # Windows
+source .venv/bin/activate  # Linux/macOS
+
 # Reinstalar dependencias
 pip install --force-reinstall -r requirements.txt
 ```
 
 ### Error: "Port already in use"
 
+**Windows**:
 ```bash
-# Ver qué proceso usa el puerto
 netstat -ano | findstr :8000
-
-# Matar el proceso (reemplazar PID con el número)
-taskkill /PID <PID> /F
+taskkill /PID <NUMERO> /F
 ```
 
-### Error: "ChromaDB not found"
+**Linux/macOS**:
+```bash
+lsof -i :8000
+kill -9 <PID>
+```
+
+### Error: "Python no encontrado"
+
+Reinstalar Python marcando "Add to PATH"
+
+### Error: "pip no reconocido"
 
 ```bash
-pip install chromadb>=0.4.0
+python -m pip install -r requirements.txt
 ```
 
-### Error: "Google ADK not found"
+### Error de Encoding (Windows)
 
-```bash
-pip install google-adk>=0.1.0
-```
-
-### Los servicios no inician
-
-1. Verifica que Python esté en el PATH:
-```bash
-python --version
-```
-
-2. Verifica las dependencias:
-```bash
-pip list
-```
-
-3. Revisa los logs de cada servicio en las terminales
-
----
-
-## Estructura de Puertos
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                     localhost                               │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  Puerto 8000 ──────► Backend (FastAPI)                    │
-│                        ├── Back Office (/static)             │
-│                        ├── Supplier Portal (/supplier)       │
-│                        └── API REST (/docs)                  │
-│                                                              │
-│  Puerto 8001 ──────► Supplier Service                     │
-│                        └── API REST (/docs)                  │
-│                                                              │
-│  Puerto 8002 ──────► Contract Service                      │
-│                        └── API REST (/docs)                  │
-│                                                              │
-│  Puerto 8003 ──────► External Auditor (A2A) [opcional]    │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
+Agregar al inicio de scripts `.bat`:
+```batch
+chcp 65001 >nul
+set PYTHONIOENCODING=utf-8
 ```
 
 ---
 
-## Configuración Avanzada
+## Estructura de Archivos Final
 
-### Cambiar Puertos
-
-Edita `platform/backend/settings.py`:
-
-```python
-class Settings(BaseSettings):
-    port: int = 8000  # Cambiar aquí
-    
-    supplier_service_url: str = "http://127.0.0.1:8001"
-    contract_service_url: str = "http://127.0.0.1:8002"
 ```
-
-### Deshabilitar Watcher Automático
-
-```env
-INV_ENABLE_WATCHER=false
-```
-
-### Configurar ChromaDB
-
-El directorio de ChromaDB se crea automáticamente en:
-```
-platform/data/chroma_db/
-```
-
----
-
-## Desinstalación
-
-Para detener todos los servicios:
-1. Cierra las ventanas de terminal
-2. O ejecuta:
-```bash
-python stop_all.bat
-```
-
-Para eliminar el entorno virtual:
-```bash
-rmdir /s /q .venv
+invoice_approval_system/
+├── README.md              ← Documentación principal
+├── CHANGELOG.md          ← Historial de cambios
+├── INSTALL.md            ← Esta guía
+├── requirements.txt      ← Dependencias
+├── .env.example          ← Plantilla variables
+│
+├── agents/               ← Agentes ADK
+├── tools/                ← Herramientas
+├── guardrails/           ← Sistema de guardrails
+├── rag/                  ← RAG (ChromaDB)
+├── ml/                   ← Machine Learning
+├── sessions/             ← Gestión de sesiones
+├── evaluation/           ← Evaluación y testing
+│
+├── platform/             ← Backend y Frontend
+│   ├── backend/          # Puerto 8000
+│   ├── frontend/         # Back Office
+│   └── services/         # Microservicios
+│
+├── supplier_portal/      ← Portal del proveedor
+├── a2a/                  ← Agente A2A externo
+│
+├── data/                 ← Datos persistentes
+│   ├── payments.db       # SQLite
+│   ├── chroma_db/        # Vector store
+│   ├── contracts/        # Contratos .txt
+│   └── new_invoices/     # Facturas pendientes
+│
+└── docs/                 ← Documentación adicional
 ```
 
 ---
 
-## Soporte
+## Guías Detalladas por Sistema Operativo
 
-Si tienes problemas:
-1. Revisa los logs en las terminales de servicios
-2. Verifica que todos los puertos estén disponibles
-3. Asegúrate de tener Python 3.12+ instalado
-4. Comprueba que todas las dependencias estén instaladas
+| Guía | Ubicación |
+|------|-----------|
+| Windows | [docs/INSTALACION_WINDOWS.md](docs/INSTALACION_WINDOWS.md) |
+| Linux | [docs/INSTALACION_LINUX.md](docs/INSTALACION_LINUX.md) |
+| macOS | [docs/INSTALACION_MACOS.md](docs/INSTALACION_MACOS.md) |
+| Guía Rápida | [docs/GUIA_RAPIDA.md](docs/GUIA_RAPIDA.md) |
 
 ---
 
-## Próximos Pasos
+## Documentación Relacionada
 
-Una vez instalado, consulta:
-- [README.md](README.md) — Descripción general del sistema
-- [CHANGELOG.md](CHANGELOG.md) — Historial de cambios
-- Documentos en [docs/](docs/) — Especificaciones técnicas
+| Archivo | Descripción |
+|---------|-------------|
+| [README.md](README.md) | Descripción general y arquitectura |
+| [CHANGELOG.md](CHANGELOG.md) | Historial de cambios |
+| [docs/especificacion_sistema_invoiceflow.md](docs/especificacion_sistema_invoiceflow.md) | Especificación técnica |
+
+---
+
+**Versión del sistema**: 1.0.0  
+**Última actualización**: 2025-06-20

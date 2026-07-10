@@ -1,0 +1,20 @@
+{
+  "contracts": {
+    "SUP001": {
+      "filename": "contrato_proveedor_001.txt",
+      "uploaded_at": "2026-06-28T00:00:00Z"
+    },
+    "SUP002": {
+      "filename": "contrato_proveedor_002.txt",
+      "uploaded_at": "2026-06-28T00:00:00Z"
+    },
+    "SUP004": {
+      "filename": "contrato_proveedor_004.txt",
+      "uploaded_at": "2026-06-28T00:00:00Z"
+    },
+    "SUP005": {
+      "filename": "contrato_proveedor_005.txt",
+      "uploaded_at": "2026-06-28T00:00:00Z"
+    }
+  }
+}
