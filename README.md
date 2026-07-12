@@ -2,7 +2,7 @@
 
 > **Trabajo Práctico — Sistemas Multiagentes** | Universidad de Palermo
 >
-> **Estado**: ✅ Operativo | **Versión**: 2.0.0 (con Asistente IA)
+> **Estado**: ✅ Operativo | **Versión**: 2.1.0 | **Última actualización**: 2026-07-15
 >
 > 🔗 **Repositorio**: [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
 
@@ -772,7 +772,7 @@ Este proyecto es **académico** y fue desarrollado con fines educativos para la 
 
 ---
 
-*InvoiceFlow v2.0.0 — Universidad de Palermo 2026*
+*InvoiceFlow v2.1.0 — Universidad de Palermo 2026*
 
 ## 📦 Repositorio Git
 - El código fuente está disponible en: https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
