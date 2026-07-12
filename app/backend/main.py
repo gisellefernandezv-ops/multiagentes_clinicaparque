@@ -27,7 +27,8 @@ PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
 from .settings import settings
-from .watcher import InboxWatcher
+from .watcher import InboxWatcher, parse_invoice_file, move_file
+from .orchestrator import process_invoice
 from .inbox_router import router as inbox_router
 from .chat_router import router as chat_router
 from .new_invoices_router import router as new_invoices_router
@@ -49,7 +50,30 @@ async def lifespan(app: FastAPI):
     print(f"[backend] Contract service URL: {settings.contract_service_url}")
 
     if settings.enable_watcher:
-        watcher = InboxWatcher()
+        def auto_process_invoice(path: Path):
+            """Procesa automaticamente una factura nueva en el inbox."""
+            print(f"[watcher] Procesando archivo: {path.name}")
+            try:
+                invoice = parse_invoice_file(path)
+                if not invoice:
+                    print(f"[watcher] No se pudo parsear {path.name}, moviendo a rejected/")
+                    move_file(path, settings.rejected_dir)
+                    return
+                
+                result = process_invoice(invoice, source_file=str(path))
+                decision = result.get("decision", "UNKNOWN")
+                
+                if decision in {"APPROVED", "REJECTED", "ESCALATED"}:
+                    move_file(path, settings.processed_dir)
+                    print(f"[watcher] Procesada: {path.name} -> {decision}")
+                else:
+                    print(f"[watcher] Decision desconocida: {decision} para {path.name}")
+                    
+            except Exception as e:
+                print(f"[watcher] Error procesando {path.name}: {e}")
+                move_file(path, settings.rejected_dir)
+        
+        watcher = InboxWatcher(on_new_file=auto_process_invoice)
         watcher.start()
     yield
 
@@ -108,34 +132,58 @@ async def agents_health():
 
     El browser hace fetch a este endpoint (mismo origen: :8000) y el backend
     consulta los microservicios internamente. Evita problemas de CORS.
+
+    Divide los servicios en:
+    - SERVICIOS CRÍTICOS: InvoiceFlow Backend, Supplier Service (validación de proveedores), Contract Service (RAG)
+    - SERVICIOS SECUNDARIOS: External Auditor (auditoría A2A)
     """
     import httpx
-    services_config = [
+
+    # Servicios críticos - son necesarios para el funcionamiento del sistema
+    critical_services = [
         ("invoiceflow-backend", f"http://127.0.0.1:{settings.port}/health"),
-        ("supplier-service",    f"{settings.supplier_service_url}/health"),
+        ("supplier-service",   f"{settings.supplier_service_url}/health"),
         ("contract-service",    f"{settings.contract_service_url}/health"),
-        ("external-auditor",    "http://127.0.0.1:8003/health"),
     ]
-    results = {}
-    async with httpx.AsyncClient(timeout=2.0) as client:
-        for name, url in services_config:
-            try:
+
+    # Servicios secundarios - opcionales para auditoría extendida
+    secondary_services = [
+        ("external-auditor",   "http://127.0.0.1:8003/health"),
+    ]
+
+    async def check_service(name: str, url: str) -> dict:
+        try:
+            async with httpx.AsyncClient(timeout=3.0) as client:
                 r = await client.get(url)
                 if r.status_code == 200:
                     data = r.json()
-                    results[name] = {
+                    return {
                         "ok": True,
                         "status": data.get("status", "unknown"),
                         "url": url,
                         "details": {k: v for k, v in data.items() if k not in ("status", "service")},
                     }
                 else:
-                    results[name] = {"ok": False, "status": "down", "url": url,
-                                     "error": f"HTTP {r.status_code}"}
-            except Exception as e:
-                results[name] = {"ok": False, "status": "down", "url": url,
-                                 "error": str(e)}
-    return results
+                    return {"ok": False, "status": "down", "url": url, "error": f"HTTP {r.status_code}"}
+        except Exception as e:
+            return {"ok": False, "status": "down", "url": url, "error": str(e)}
+
+    results = {}
+    for name, url in critical_services:
+        results[name] = await check_service(name, url)
+    for name, url in secondary_services:
+        results[name] = await check_service(name, url)
+
+    # Verificar estado general
+    critical_ok = all(results[name]["ok"] for name, _ in critical_services)
+    all_ok = all(results[name]["ok"] for name, _ in critical_services + secondary_services)
+
+    return {
+        "status": "ok" if critical_ok else "degraded",
+        "all_services_ok": all_ok,
+        "critical_services": {name: results[name] for name, _ in critical_services},
+        "secondary_services": {name: results[name] for name, _ in secondary_services},
+    }
 
 
 # FIX BUG-016: proxy endpoints para ABM de proveedores

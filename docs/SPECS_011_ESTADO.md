@@ -123,6 +123,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Proveedores | BUG-016, BUG-017, BUG-018 | ABM completo + UI responsive |
 | Chat IA | BUG-019, BUG-020 | Entendimiento de "montos" + acciones |
 | **Parser facturas** | **BUG-021** | **invoice_id, fecha y monto no se extraían** |
+| **Procesamiento automático** | **BUG-022** | **Facturas procesadas al subir al inbox** |
 
 > Ver `bugs/README.md` para detalles completos.
 

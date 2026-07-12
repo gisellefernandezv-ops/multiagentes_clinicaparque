@@ -27,8 +27,9 @@ Tracking de bugs del sistema. Cada bug tiene un archivo `bugs_NNN.md`.
 | [BUG-019](./bugs_019.md) | MEDIUM   | `chat_router.py` + `app.js` | Chat no entiende "montos" + debe llamarse "Asistente IA" + presentación | ✅ RESUELTO |
 | [BUG-020](./bugs_020.md) | HIGH     | `chat_router.py` | Chat no entiende "modificar el monto" → va a inbox_amounts | ✅ RESUELTO |
 | [BUG-021](./bugs_021.md) | HIGH     | `watcher.py` | Parser facturas no extrae invoice_id, fecha y monto | ✅ RESUELTO |
+| [BUG-022](./bugs_022.md) | HIGH     | `main.py` | Procesamiento automático de facturas en inbox | ✅ RESUELTO |
 
-## Resumen Ejecutivo
+## Resumen ejecutivo
 
 **Síntoma reportado por usuario:** "En el backoffice no veo ningún resultado, está vacío. No hay datos en el dashboard como en el resto de pantallas. Además el chat no me da ninguna información."
 

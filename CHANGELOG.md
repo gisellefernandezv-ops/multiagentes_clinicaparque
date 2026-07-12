@@ -4,6 +4,22 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
+## [2.2.0] — 2026-07-15
+
+### ✨ Added
+
+**Procesamiento automático de facturas (BUG-022)**:
+- Cuando se sube una factura al inbox, se procesa automáticamente
+- No requiere apretar el botón "Procesar"
+- El watcher detecta archivos nuevos y los procesa con el orchestrator
+- Mueve archivos procesados a `app/data/processed/`
+- Mueve archivos con error a `app/data/rejected/`
+
+**Archivos modificados**:
+- `app/backend/main.py` — Callback `auto_process_invoice()` integrado al watcher
+
+---
+
 ## [2.1.0] — 2026-07-15
 
 ### 🐛 Fixed
