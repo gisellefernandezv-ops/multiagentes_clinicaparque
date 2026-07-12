@@ -26,6 +26,7 @@ Tracking de bugs del sistema. Cada bug tiene un archivo `bugs_NNN.md`.
 | [BUG-018](./bugs_018.md) | HIGH     | `main.py` + `style.css`   | 500 al editar proveedor + falta responsive design | ✅ RESUELTO |
 | [BUG-019](./bugs_019.md) | MEDIUM   | `chat_router.py` + `app.js` | Chat no entiende "montos" + debe llamarse "Asistente IA" + presentación | ✅ RESUELTO |
 | [BUG-020](./bugs_020.md) | HIGH     | `chat_router.py` | Chat no entiende "modificar el monto" → va a inbox_amounts | ✅ RESUELTO |
+| [BUG-021](./bugs_021.md) | HIGH     | `watcher.py` | Parser facturas no extrae invoice_id, fecha y monto | ✅ RESUELTO |
 
 ## Resumen Ejecutivo
 

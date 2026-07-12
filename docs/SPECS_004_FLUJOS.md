@@ -267,5 +267,69 @@ Usuario → RouterAgent → Clasificar intención
 
 ---
 
-**Versión**: 2.0.0  
+## 8. Formatos de Factura Soportados
+
+### 8.1 Formato 1: Estándar AFIP
+
+```
+[EMISOR] Razon Social / CUIT / Condicion IVA / Ing. Brutos / Inicio Act.
+[IDENTIFICACION] Codigo tipo / Punto de Venta / Numero / Fecha
+...
+TOTAL: $ XXX,XXX.XX
+```
+
+Campos extraídos:
+- `invoice_id`: `FC-{punto_venta}-{numero}`
+- `invoice_date`: `YYYY-MM-DD`
+- `amount`: float
+
+### 8.2 Formato 2: Factura Nueva (FC-2026-SUP001-NUEVA-X)
+
+```
+FACTURA A
+Numero: FC-2026-SUP001-NUEVA-3
+Fecha: 28/06/2026
+...
+TOTAL: ARS $ 25,000.00
+```
+
+Campos extraídos:
+- `invoice_id`: `FC-2026-SUP001-NUEVA-3`
+- `invoice_date`: `2026-06-28`
+- `amount`: `25000.0`
+
+### 8.3 Formato 3: Key:Value
+
+```
+invoice_id: FC-001-00000001
+supplier_id: SUP001
+amount: 50000
+invoice_date: 2025-06-01
+currency: ARS
+```
+
+### 8.4 Formato 4: JSON
+
+```json
+{
+  "invoice_id": "FC-001-00000001",
+  "supplier_id": "SUP001",
+  "amount": 50000,
+  "invoice_date": "2025-06-01",
+  "currency": "ARS"
+}
+```
+
+### 8.5 Notas sobre el Parser
+
+El parser en `app/backend/watcher.py` detecta automáticamente el formato:
+1. Si es `.json` → usa `json.loads()`
+2. Si es `.txt` → detecta formato FACTURA o Key:Value
+3. Extrae `supplier_id` del filename o del CUIT del emisor
+
+> Ver `bugs/bugs_021.md` para detalles del parser.
+
+---
+
+**Versión**: 2.0.1  
 **Última actualización**: 2026-07-15

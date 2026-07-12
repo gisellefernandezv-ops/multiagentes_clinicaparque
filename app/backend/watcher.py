@@ -163,18 +163,31 @@ def _parse_factura_txt(text: str, filename: str = "") -> Optional[dict]:
             result["letra_comprobante"] = codigo_map[m.group(1)]
 
     # ====== IDENTIFICACION ======
+    # Formato 1: N° XXXX-XXXXXXXX (estándar AFIP)
     m = re.search(r"N..?\s*(\d{4})\s*-\s*(\d{8})", text)
     if m:
         result["punto_venta"] = m.group(1)
         result["numero_comprobante"] = m.group(2)
-        # FIX BUG-015: nomenclatura uniforme FC-<PV>-<NRO>
         result["invoice_id"] = f"FC-{m.group(1)}-{m.group(2)}"
+
+    # Formato 2: Numero: FC-XXXX-SUP001-NUEVA-X (formato nuevo)
+    if "invoice_id" not in result:
+        m = re.search(r"Numero:\s*([A-Z0-9\-]+)", text)
+        if m:
+            result["invoice_id"] = m.group(1).strip()
+
+    # Fecha: FECHA: DD/MM/YYYY (formato estándar)
     m = re.search(r"FECHA:\s+(\d{1,2})/(\d{1,2})/(\d{4})", text)
     if m:
         d, mo, y = m.groups()
         result["invoice_date"] = f"{y}-{int(mo):02d}-{int(d):02d}"
 
-    # ====== EMISOR ======
+    # Fecha: Fecha: DD/MM/YYYY (formato alternativo)
+    if "invoice_date" not in result:
+        m = re.search(r"^Fecha:\s*(\d{1,2})/(\d{1,2})/(\d{4})", text, re.MULTILINE)
+        if m:
+            d, mo, y = m.groups()
+            result["invoice_date"] = f"{y}-{int(mo):02d}-{int(d):02d}"
     m = re.search(r"Razon Social:\s+(.+)", text)
     if m: result["emisor_razon_social"] = m.group(1).strip()
     m = re.search(r"Rubro/Matricula:\s+(.+)", text)
@@ -253,6 +266,15 @@ def _parse_factura_txt(text: str, filename: str = "") -> Optional[dict]:
         if total is not None:
             result["amount"] = total
             result["total"] = total
+    
+    # Formato alternativo: TOTAL: ARS $ XXX,XXX.XX
+    if "amount" not in result or result.get("amount") == 0:
+        m = re.search(r"TOTAL:\s*ARS\s*\$\s*([\d.,]+)", text)
+        if m:
+            total = _parse_amount_ar(m.group(1))
+            if total is not None:
+                result["amount"] = total
+                result["total"] = total
 
     result.setdefault("currency", "ARS")
     # subtotal para factura B/C = total (sin IVA)
@@ -330,10 +352,25 @@ def _resolve_supplier_by_cuit(cuit: str) -> Optional[str]:
     return None
 
 def _parse_amount_ar(s: str) -> Optional[float]:
-    """Parsea monto en formato argentino: 1.234.567,89 → 1234567.89"""
+    """Parsea monto en formato argentino o inglés: 1.234.567,89 → 1234567.89"""
     if not s:
         return None
-    s = s.strip().replace(".", "").replace(",", ".")
+    s = s.strip()
+    has_comma = ',' in s
+    has_dot = '.' in s
+    if has_comma and has_dot:
+        comma_pos = s.rfind(',')
+        dot_pos = s.rfind('.')
+        if comma_pos > dot_pos:
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            s = s.replace(',', '')
+    elif has_comma:
+        parts = s.split(',')
+        if len(parts) == 2 and len(parts[1]) == 2:
+            s = s.replace(',', '.')
+        else:
+            s = s.replace(',', '')
     try:
         return float(s)
     except ValueError:
@@ -370,10 +407,25 @@ def _resolve_supplier_by_cuit(cuit: str) -> Optional[str]:
     return None
 
 def _parse_amount_ar(s: str) -> Optional[float]:
-    """Parsea monto en formato argentino: 1.234.567,89 → 1234567.89"""
+    """Parsea monto en formato argentino o inglés: 1.234.567,89 → 1234567.89"""
     if not s:
         return None
-    s = s.strip().replace(".", "").replace(",", ".")
+    s = s.strip()
+    has_comma = ',' in s
+    has_dot = '.' in s
+    if has_comma and has_dot:
+        comma_pos = s.rfind(',')
+        dot_pos = s.rfind('.')
+        if comma_pos > dot_pos:
+            s = s.replace('.', '').replace(',', '.')
+        else:
+            s = s.replace(',', '')
+    elif has_comma:
+        parts = s.split(',')
+        if len(parts) == 2 and len(parts[1]) == 2:
+            s = s.replace(',', '.')
+        else:
+            s = s.replace(',', '')
     try:
         return float(s)
     except ValueError:

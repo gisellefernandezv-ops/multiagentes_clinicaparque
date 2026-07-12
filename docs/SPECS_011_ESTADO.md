@@ -2,7 +2,7 @@
 
 > **Proyecto**: InvoiceFlow  
 > **Tipo**: Análisis de Estado  
-> **Fecha**: 2026-07-15  
+> **Fecha**: 2026-07-15 (actualizado)  
 > **Estado**: ✅ **COMPLETO** — Sistema Validado
 
 ---
@@ -10,6 +10,8 @@
 ## 1. Resumen Ejecutivo
 
 **✅ Sistema 100% Operativo** — Validación: 60/60 checks PASS, 6/6 Golden Cases PASS (100%)
+
+**Última actualización**: Parser de facturas corregido (BUG-021) — Ahora extrae invoice_id, invoice_date y amount correctamente.
 
 Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, confirmando que todos los componentes están funcionales y verificados.
 
@@ -73,7 +75,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | new_invoices_router | ✅ OK | Carpeta new invoices |
 | supplier_portal_router | ✅ OK | Portal de proveedores |
 | orchestrator (HTTP) | ✅ OK | Integración con ADK |
-| watcher | ✅ OK | Monitor funcional |
+| watcher | ✅ OK | Parser facturas (3 formatos) + monitor funcional |
 
 ### 3.5 FRONTEND ✅
 
@@ -106,7 +108,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 
 ## 4. Bugs Resueltos ✅
 
-### 4.1 Resumen (20 bugs corregidos)
+### 4.1 Resumen (21 bugs corregidos)
 
 | Componente | Bugs | Descripción |
 |------------|------|-------------|
@@ -120,6 +122,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Factura B | BUG-014, BUG-015 | Formato real FC-PV-NRO + tipos A/B/C |
 | Proveedores | BUG-016, BUG-017, BUG-018 | ABM completo + UI responsive |
 | Chat IA | BUG-019, BUG-020 | Entendimiento de "montos" + acciones |
+| **Parser facturas** | **BUG-021** | **invoice_id, fecha y monto no se extraían** |
 
 > Ver `bugs/README.md` para detalles completos.
 

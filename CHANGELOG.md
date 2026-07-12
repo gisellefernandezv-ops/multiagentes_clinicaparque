@@ -4,6 +4,25 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
+## [2.1.0] — 2026-07-15
+
+### 🐛 Fixed
+
+**Parser de facturas (BUG-021)**:
+- **Formatos soportados**: Ahora reconoce los 3 formatos de facturas
+  - Estándar AFIP: `N° XXXX-XXXXXXXX`
+  - Formato nuevo: `Numero: FC-2026-SUP001-NUEVA-3`
+  - Formato simple: `invoice_id: FC-XXX`
+- **Fecha de emisión**: Corregido para `Fecha:` y `FECHA:`
+- **Monto**: Corregido `_parse_amount_ar()` para parsear `25,000.00` → `25000.0`
+- **Campos extraídos**: `invoice_id`, `invoice_date`, `amount` ahora funcionan correctamente
+
+**Archivos modificados**:
+- `app/backend/watcher.py` — Parser mejorado
+- `app/backend/inbox_router.py` — Modelo InboxItem con campos adicionales
+
+---
+
 ## [2.0.0] — 2026-07-15
 
 ### 🎉 Release Final — Sistema 100% Operativo
