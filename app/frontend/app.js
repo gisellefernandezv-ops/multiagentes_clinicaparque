@@ -406,7 +406,7 @@ async function checkAgentsHealth() {
             statusEl.innerHTML = `
                 <span class="agents-indicator ok">🟢</span>
                 <span class="agents-text">Todos los servicios OK</span>
-            `        ;
+            `;
         }
     } catch (err) {
         console.error('[checkAgentsHealth]', err);
@@ -419,6 +419,17 @@ async function checkAgentsHealth() {
 
 // Refrescar health cada 30 segundos
 setInterval(checkAgentsHealth, 30000);
+
+// Auto-refresh inbox y dashboard cada 10 segundos (BUG-022)
+setInterval(() => {
+    // Solo refresh si la página de inbox está visible
+    const inboxPage = document.getElementById('page-inbox');
+    if (inboxPage && inboxPage.classList.contains('active')) {
+        loadInbox();
+    }
+    // Refresh dashboard siempre
+    loadDashboard();
+}, 10000);
 
 // ============================================================
 // Evaluación
@@ -797,15 +808,12 @@ async function loadAgentsStatus() {
     };
 
     const now = Date.now();
-    Object.entries(data).forEach(([name, info]) => {
-        if (info.ok) {
-            agentLastSeen[name] = now;
-        }
-    });
 
-    grid.innerHTML = Object.entries(data).map(([name, info]) => {
-        const cfg = servicesConfig[name] || { icon: '❓', port: '?' };
+    // Función para renderizar un servicio
+    function renderService(name, info, cfg) {
         const isOnline = info.ok;
+        if (isOnline) agentLastSeen[name] = now;
+
         let lastSeen = '—';
         if (agentLastSeen[name]) {
             const diffSec = Math.floor((now - agentLastSeen[name]) / 1000);
@@ -815,16 +823,21 @@ async function loadAgentsStatus() {
         } else if (isOnline) {
             lastSeen = 'Ahora';
         }
+
         return `
             <div class="agent-card ${isOnline ? '' : 'warning'}">
                 <div class="agent-header">
                     <span class="agent-icon">${cfg.icon}</span>
-                    <span class="agent-name">${name}</span>
+                    <span class="agent-name">${cfg.description || name}</span>
                     <span class="agent-status ${isOnline ? 'online' : 'offline'}">
                         ${isOnline ? '🟢 Online' : '🔴 Caído'}
                     </span>
                 </div>
                 <div class="agent-stats">
+                    <div class="agent-stat">
+                        <span class="stat-label">Servicio</span>
+                        <span class="stat-value">${name}</span>
+                    </div>
                     <div class="agent-stat">
                         <span class="stat-label">Puerto</span>
                         <span class="stat-value">${cfg.port}</span>
@@ -833,14 +846,49 @@ async function loadAgentsStatus() {
                         <span class="stat-label">Última verificación</span>
                         <span class="stat-value">${lastSeen}</span>
                     </div>
-                    <div class="agent-stat">
-                        <span class="stat-label">Detalle</span>
-                        <span class="stat-value" style="font-size: 11px;">${info.error || JSON.stringify(info.details || {}).slice(0, 60)}</span>
-                    </div>
                 </div>
+                ${info.error ? `<div style="color:#c00;font-size:12px;margin-top:8px;">Error: ${info.error}</div>` : ''}
             </div>
         `;
-    }).join('');
+    }
+
+    // Renderizar secciones
+    const criticalServices = data.critical_services || {};
+    const secondaryServices = data.secondary_services || {};
+
+    let html = '';
+
+    // Sección de estado general
+    const criticalOk = Object.values(criticalServices).every(s => s.ok);
+    html += `
+        <div class="status-summary ${criticalOk ? 'ok' : 'warning'}">
+            <span class="status-icon">${criticalOk ? '✅' : '⚠️'}</span>
+            <span class="status-text">
+                <strong>${criticalOk ? 'Todos los servicios críticos operativos' : 'Servicios críticos con problemas'}</strong><br>
+                <small>Estado general: ${data.status || 'desconocido'}</small>
+            </span>
+        </div>
+    `;
+
+    // Servicios críticos
+    html += '<h3 class="section-title" style="margin-top:20px;">🔴 SERVICIOS CRÍTICOS</h3>';
+    html += '<p style="color:#64748b;font-size:13px;margin-bottom:16px;">Estos servicios son necesarios para el funcionamiento del sistema.</p>';
+    html += '<div class="agents-grid">';
+    for (const [name, info] of Object.entries(criticalServices)) {
+        html += renderService(name, info, servicesConfig[name] || { icon: '❓', port: '?', description: name });
+    }
+    html += '</div>';
+
+    // Servicios secundarios
+    html += '<h3 class="section-title" style="margin-top:32px;">🟡 SERVICIOS SECUNDARIOS</h3>';
+    html += '<p style="color:#64748b;font-size:13px;margin-bottom:16px;">Servicios opcionales para funcionalidad extendida.</p>';
+    html += '<div class="agents-grid">';
+    for (const [name, info] of Object.entries(secondaryServices)) {
+        html += renderService(name, info, servicesConfig[name] || { icon: '❓', port: '?', description: name });
+    }
+    html += '</div>';
+
+    grid.innerHTML = html;
 }
 
 // Auto-refresh cada 15 segundos
