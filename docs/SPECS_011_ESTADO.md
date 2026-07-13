@@ -2,7 +2,7 @@
 
 > **Proyecto**: InvoiceFlow  
 > **Tipo**: Análisis de Estado  
-> **Fecha**: 2026-07-15 (actualizado)  
+> **Fecha**: 2026-07-15  
 > **Estado**: ✅ **COMPLETO** — Sistema Validado
 
 ---
@@ -75,7 +75,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | new_invoices_router | ✅ OK | Carpeta new invoices |
 | supplier_portal_router | ✅ OK | Portal de proveedores |
 | orchestrator (HTTP) | ✅ OK | Integración con ADK |
-| watcher | ✅ OK | Parser facturas (3 formatos) + monitor funcional |
+| watcher | ✅ OK | Parser facturas (3 formatos) + auto-proceso + monitor |
 
 ### 3.5 FRONTEND ✅
 
@@ -124,6 +124,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Chat IA | BUG-019, BUG-020 | Entendimiento de "montos" + acciones |
 | **Parser facturas** | **BUG-021** | **invoice_id, fecha y monto no se extraían** |
 | **Procesamiento automático** | **BUG-022** | **Facturas procesadas al subir al inbox** |
+| **Auto-refresh frontend** | **BUG-022** | **Inbox/Dashboard se actualizan cada 10s** |
 
 > Ver `bugs/README.md` para detalles completos.
 

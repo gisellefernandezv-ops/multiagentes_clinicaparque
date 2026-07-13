@@ -130,5 +130,5 @@ docs/
 
 ---
 
-**Versión**: 2.0.0  
+**Versión**: 2.2.0  
 **Última actualización**: 2026-07-15

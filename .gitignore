@@ -99,3 +99,8 @@ site/
 *.tar.gz
 *.rar
 files.zip
+
+# Datos generados automáticamente
+app/data/processed/
+app/data/rejected/
+msg.txt

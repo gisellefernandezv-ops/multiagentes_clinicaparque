@@ -17,7 +17,7 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 
-from agent import perform_audit_tool, request_additional_info_tool
+from .agent import perform_audit_tool, request_additional_info_tool
 
 # =============================================================================
 # APP

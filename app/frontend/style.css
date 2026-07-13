@@ -1415,3 +1415,44 @@ tbody tr:last-child td {
         padding: 0;
     }
 }
+
+
+/* Status Summary */
+.status-summary {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    font-size: 14px;
+}
+
+.status-summary.ok {
+    background: #dcfce7;
+    border: 1px solid #16a34a;
+    color: #15803d;
+}
+
+.status-summary.warning {
+    background: #fef3c7;
+    border: 1px solid #b45309;
+    color: #b45309;
+}
+
+.status-summary .status-icon {
+    font-size: 24px;
+}
+
+.status-summary .status-text {
+    flex: 1;
+}
+
+.status-summary .status-text strong {
+    display: block;
+    margin-bottom: 4px;
+}
+
+.status-summary .status-text small {
+    opacity: 0.8;
+}

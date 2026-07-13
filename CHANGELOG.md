@@ -15,8 +15,13 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 - Mueve archivos procesados a `app/data/processed/`
 - Mueve archivos con error a `app/data/rejected/`
 
+**Auto-refresh del Frontend**:
+- Inbox y Dashboard se actualizan automáticamente cada 10 segundos
+- No necesita recargar la página manualmente
+
 **Archivos modificados**:
 - `app/backend/main.py` — Callback `auto_process_invoice()` integrado al watcher
+- `app/frontend/app.js` — Auto-refresh cada 10 segundos
 
 ---
 
@@ -96,6 +101,8 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 | Factura B | BUG-014, BUG-015 | Formato real FC-PV-NRO + tipos A/B/C |
 | Proveedores | BUG-016, BUG-017, BUG-018 | ABM completo + UI responsive |
 | Chat IA | BUG-019, BUG-020 | Entendimiento de "montos" + acciones |
+| **Procesamiento automático** | BUG-022 | Facturas procesadas al subir al inbox |
+| **Auto-refresh frontend** | BUG-022 | Inbox/Dashboard se actualizan cada 10s |
 
 ### ✅ Validación Completa del Sistema
 
