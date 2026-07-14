@@ -2,7 +2,7 @@
 
 > **Trabajo Práctico — Sistemas Multiagentes** | Universidad de Palermo
 >
-> **Estado**: ✅ Operativo | **Versión**: 2.2.0 | **Última actualización**: 2026-07-15
+> **Estado**: ✅ Operativo | **Versión**: 2.3.0 | **Última actualización**: 2026-07-17
 >
 > 🔗 **Repositorio**: [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
 
@@ -13,16 +13,17 @@
 1. [Descripción del Proyecto](#1-descripción-del-proyecto)
 2. [Arquitectura del Sistema](#2-arquitectura-del-sistema)
 3. [Stack Tecnológico](#3-stack-tecnológico)
-4. [Agentes Implementados](#4-agentes-implementados)
-5. [Flujo de Negocio](#5-flujo-de-negocio)
-6. [Estructura de Carpetas](#6-estructura-de-carpetas)
-7. [Instalación Rápida](#7-instalación-rápida)
-8. [Ejecución del Sistema](#8-ejecución-del-sistema)
-9. [Ejemplos de Uso](#9-ejemplos-de-uso)
-10. [Evaluación y Testing](#10-evaluación-y-testing)
-11. [Troubleshooting](#11-troubleshooting)
+4. [Bases de Datos](#4-bases-de-datos)
+5. [Agentes Implementados](#5-agentes-implementados)
+6. [Flujo de Negocio](#6-flujo-de-negocio)
+7. [Estructura de Carpetas](#7-estructura-de-carpetas)
+8. [Instalación Rápida](#8-instalación-rápida)
+9. [Ejecución del Sistema](#9-ejecución-del-sistema)
+10. [Ejemplos de Uso](#10-ejemplos-de-uso)
+11. [Evaluación y Testing](#11-evaluación-y-testing)
 12. [API Reference](#12-api-reference)
-13. [Licencia y Créditos](#13-licencia-y-créditos)
+13. [Troubleshooting](#13-troubleshooting)
+14. [Licencia y Créditos](#14-licencia-y-créditos)
 
 ---
 
@@ -60,11 +61,12 @@
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           CAPA 4: INTERFAZ DE USUARIO                       │
+│                           CAPA 4: INTERFAZ DE USUARIO                        │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │  ┌─────────────────────┐         ┌─────────────────────┐                   │
 │  │   Back Office       │         │  Supplier Portal    │                   │
 │  │   (Administración)  │         │  (Proveedores)      │                   │
+│  │   app/frontend/     │         │  supplier_portal/   │                   │
 │  └──────────┬──────────┘         └──────────┬──────────┘                   │
 │             │                               │                              │
 │             └───────────────┬───────────────┘                              │
@@ -78,11 +80,11 @@
 │  │  │   Router    │  │  Validator  │  │  Contract   │  │   Payment   │  │  │
 │  │  │   Agent     │  │   Agent     │  │   Agent     │  │   Agent     │  │  │
 │  │  └─────────────┘  └─────────────┘  └─────────────┘  └─────────────┘  │  │
-│  │                                                                  │  │
-│  │  ┌─────────────────────────────────────────────────────────────┐  │  │
-│  │  │                    GUARDRAIL ENGINE                         │  │  │
-│  │  │  (26 reglas: VR + BR + SR + CR)                          │  │  │
-│  │  └─────────────────────────────────────────────────────────────┘  │  │
+│  │                                                                  │  │  │
+│  │  ┌─────────────────────────────────────────────────────────────┐  │  │  │
+│  │  │                    GUARDRAIL ENGINE                         │  │  │  │
+│  │  │  (26 reglas: VR + BR + SR + CR)                          │  │  │  │
+│  │  └─────────────────────────────────────────────────────────────┘  │  │  │
 │  └──────────────────────────────────────────────────────────────────────┘  │
 │                             │                                              │
 ├─────────────────────────────┼───────────────────────────────────────────────┤
@@ -105,14 +107,40 @@
 │  │ (payments)   │  │  (RAG)       │  │  (PDFs)      │  │  Server      │    │
 │  └──────────────┘  └──────────────┘  └──────────────┘  └──────────────┘    │
 │                                                                             │
-│  ┌──────────────┐  ┌──────────────┐                                        │
-│  │   SQLite     │  │   SQLite     │                                        │
-│  │ (suppliers)  │  │  (chat)      │                                        │
-│  └──────────────┘  └──────────────┘                                        │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐                     │
+│  │   SQLite     │  │   SQLite     │  │   SQLite     │                     │
+│  │ (suppliers)  │  │  (chat)      │  │  (inbox)     │                     │
+│  │ app/data/    │  │  data/       │  │  data/       │                     │
+│  └──────────────┘  └──────────────┘  └──────────────┘                     │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### 2.2 Flujo de Datos entre Componentes
+### 2.2 Arquitectura de Microservicios
+
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│                           PUERTO 8000                                     │
+│                     BACKEND (FastAPI + Uvicorn)                          │
+│  ┌────────────────────────────────────────────────────────────────────┐   │
+│  │  Routers: inbox, chat, new_invoices, supplier_portal              │   │
+│  │  Orchestrator (pipeline HTTP+SQL directo)                         │   │
+│  │  File Watcher (auto-proceso del inbox)                           │   │
+│  │  Proxy ABM (evita CORS en browser)                               │   │
+│  └────────────────────────────────────────────────────────────────────┘   │
+│                             │                                              │
+│         ┌───────────────────┼───────────────────┐                        │
+│         ▼                   ▼                   ▼                        │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐                │
+│  │  Puerto     │     │  Puerto     │     │  Puerto     │                │
+│  │  8001       │     │  8002       │     │  8003       │                │
+│  │  Supplier   │     │  Contract   │     │  External   │                │
+│  │  Service    │     │  Service    │     │  Auditor    │                │
+│  │  (ABM)      │     │  (RAG)      │     │  (A2A)      │                │
+│  └─────────────┘     └─────────────┘     └─────────────┘                │
+└──────────────────────────────────────────────────────────────────────────┘
+```
+
+### 2.3 Flujo de Datos entre Componentes
 
 ```
 Solicitud HTTP
@@ -120,18 +148,20 @@ Solicitud HTTP
       ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
 │ FASTAPI Backend (Puerto 8000)                                           │
-│  ├── /invoice/new → InvoiceOrchestrator                                 │
-│  ├── /invoice/status → InvoiceStatusTool                                │
-│  └── /chat → RouterAgent                                               │
+│  ├── /invoice/new → Orchestrator (pipeline)                             │
+│  ├── /invoice/status → InvoiceStatusTool                               │
+│  ├── /chat → RouterAgent (ADK)                                         │
+│  └── /suppliers/* → Supplier Service Proxy                             │
 └─────────────────────────────────────────────────────────────────────────┘
       │
       ▼
 ┌─────────────────────────────────────────────────────────────────────────┐
-│ INVOICE ORCHESTRATOR                                                     │
-│  1. Apply Guardrail (validación estructural)                            │
-│  2. Transfer → ValidatorAgent (supplier_id)                            │
-│  3. Transfer → ContractAgent (RAG + monto)                             │
-│  4. Transfer → PaymentAgent (persistir decisión)                       │
+│ ORCHESTRATOR (Pipeline producto)                                       │
+│  1. Guardrail (validación estructural determinística)                   │
+│  2. Supplier Service (validación proveedor) → HTTP GET :8001           │
+│  3. Contract Service (RAG + límite) → HTTP GET :8002                   │
+│  4. External Auditor (A2A si ESCALATE) → HTTP POST :8003               │
+│  5. Persistir → SQLite (payments.db)                                   │
 └─────────────────────────────────────────────────────────────────────────┘
       │
       ▼
@@ -147,90 +177,139 @@ Solicitud HTTP
 
 | Componente | Tecnología | Versión | Justificación |
 |-----------|------------|---------|---------------|
-| **Framework de Agentes** | Google ADK | 2.3.0 | Requerido por la consigna. Abstracción de alto nivel para LlmAgent, Runner, SessionService |
+| **Framework de Agentes** | Google ADK | 2.3.0 | Abstracción de alto nivel para LlmAgent, Runner, SessionService |
 | **Modelo LLM** | Gemini 2.0 Flash | latest | Balance ideal latencia/costo/razonamiento |
 | **Embeddings** | Gemini Embedding | 001 | Modelo GA estable para ChromaDB |
 | **Vector Store (RAG)** | ChromaDB | 1.5.9 | Persistencia local, SQLite-backed, sin servidor |
-| **Base de Datos** | SQLite | 3.x | Cero configuración, archivo local `data/payments.db` |
+| **Base de Datos** | SQLite | 3.x | Cero configuración, múltiples archivos |
 | **Backend API** | FastAPI | 0.100+ | Alto rendimiento, documentación automática con OpenAPI |
-| **Lenguaje** | Python | 3.12 | Requerido por consigna (3.11+) |
+| **Lenguaje** | Python | 3.12 | Requerido (3.11+) |
 | **Métricas NLP** | BertScore + XLM-RoBERTa | latest | Evaluación multilingüe de justificaciones |
 | **ML** | scikit-learn | latest | Modelo de riesgo predictivo |
-| **UI** | HTML/CSS/JS | — | Frontend ligero sin framework |
+| **UI** | HTML/CSS/JS (Vanilla) | — | Frontend ligero sin framework |
 
 ---
 
-## 3.5 Asistente IA "GI" 🤖
+## 4. Bases de Datos
 
-El BackOffice incluye un **chat conversacional** con el Asistente Inteligente GI que entiende lenguaje natural y puede **ejecutar acciones** sobre el sistema.
+El sistema utiliza **4 archivos SQLite** para persistencia:
 
-### Comandos de consulta
+### 4.1 `data/payments.db` — Pagos Procesados
 
-| Comando | Acción |
-|---------|--------|
-| "me podras decir los montos" | Lista montos del inbox + total |
-| "mostrame el historial" | Pagos registrados |
-| "cuánto suman las facturas" | Totales por estado |
-| "resumen" | Overview del sistema |
-| "qué facturas hay en el inbox" | Lista pendientes |
-| "ayuda" | Lista de comandos |
+| Tabla | Campos | Descripción |
+|-------|--------|-------------|
+| `payments` | id, invoice_id, supplier_id, amount, decision, rejection_reason, payment_status, confirmation_id, registered_at, source_file | Registro de todas las facturas procesadas |
 
-### Comandos de acción (write)
-
-| Comando | Acción |
-|---------|--------|
-| "procesá todo el inbox" | Procesa todas las pendientes |
-| "procesá la factura FC-0001-00000001" | Procesa una específica |
-| "cambia el límite de SUP001 a 200000" | Modifica `contracts.contract_limit` |
-| "cambia el modo de SUP002 a exacto" | Modifica `contracts.mode` (EXACTO/NO_SUPERAR) |
-| "activá SUP003" / "desactivá SUP003" | Cambia `suppliers.status` |
-| "cambiar email de SUP001 a x@y.com" | Modifica `suppliers.email` |
-| "eliminá SUP003" + "sí" | Baja lógica con confirmación |
-| "ahora desactiva ese mismo" | Memoria: repite última acción |
-
-### Memoria Conversacional
-
-Las sesiones se persisten en `data/chat_sessions.db` (SQLite):
-
+**Estructura:**
 ```sql
-sessions(id, title, created_at, last_active_at)
-messages(id, session_id, role, content, intent, created_at)
+CREATE TABLE payments (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id TEXT NOT NULL,
+    supplier_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    decision TEXT NOT NULL,           -- APPROVED | REJECTED | ESCALATED
+    rejection_reason TEXT,
+    payment_status TEXT NOT NULL,     -- PENDING_PAYMENT | REJECTED | PENDING_HUMAN_REVIEW
+    confirmation_id TEXT NOT NULL,     -- PAY-XXXXXXXX
+    registered_at TIMESTAMP,
+    source_file TEXT
+);
+CREATE INDEX idx_payments_invoice ON payments(invoice_id);
+CREATE INDEX idx_payments_supplier ON payments(supplier_id);
+CREATE INDEX idx_payments_decision ON payments(decision);
 ```
 
-El sistema recuerda las últimas 5 interacciones para resolver referencias como "ese mismo", "ahora hacelo", "y del historial?".
+### 4.2 `app/data/suppliers.db` — Proveedores y Contratos
 
-### Endpoints REST
+| Tabla | Campos | Descripción |
+|-------|--------|-------------|
+| `suppliers` | supplier_id, name, cuit, status, category, email, phone, registered_at | Catálogo de proveedores |
+| `contracts` | id, supplier_id, contract_limit, mode, start_date, end_date, file_path, uploaded_at | Contratos vigentes |
+| `invoices` | id, invoice_id, supplier_id, amount, currency, invoice_date, state, rejection_reason, confirmation_id, registered_at | Historial de facturas |
 
-| Método | Path | Descripción |
-|--------|------|-------------|
-| POST | `/chat` | Enviar mensaje (body: `{message, session_id?}`) |
-| GET | `/chat/sessions` | Listar sesiones |
-| POST | `/chat/sessions` | Crear nueva sesión |
-| GET | `/chat/sessions/{id}` | Obtener mensajes |
-| DELETE | `/chat/sessions/{id}` | Eliminar sesión |
+**Estructura:**
+```sql
+CREATE TABLE suppliers (
+    supplier_id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    cuit TEXT NOT NULL,
+    status TEXT NOT NULL CHECK(status IN ('ACTIVE','INACTIVE','SUSPENDED')),
+    category TEXT,
+    email TEXT,
+    phone TEXT,
+    registered_at TEXT NOT NULL
+);
 
-## 3.6 ABM de Proveedores 🏢
+CREATE TABLE contracts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    supplier_id TEXT NOT NULL,
+    contract_limit REAL NOT NULL,
+    mode TEXT NOT NULL CHECK(mode IN ('EXACTO','NO_SUPERAR')),
+    start_date TEXT,
+    end_date TEXT,
+    file_path TEXT,
+    uploaded_at TEXT NOT NULL,
+    FOREIGN KEY (supplier_id) REFERENCES suppliers(supplier_id)
+);
 
-Backend completo para gestión de proveedores y sus contratos. Ver [SPECS_012](./docs/SPECS_012_PROVEEDORES.md).
+CREATE TABLE invoices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    invoice_id TEXT NOT NULL,
+    supplier_id TEXT NOT NULL,
+    amount REAL NOT NULL,
+    currency TEXT,
+    invoice_date TEXT,
+    state TEXT,
+    rejection_reason TEXT,
+    confirmation_id TEXT,
+    registered_at TEXT
+);
+```
 
-### Modos de validación de contrato
+### 4.3 `data/chat_sessions.db` — Sesiones de Chat (Asistente GI)
 
-- **NO_SUPERAR** (default): la factura puede ser menor o igual al límite
-- **EXACTO**: la factura debe ser exactamente igual al límite
+| Tabla | Campos | Descripción |
+|-------|--------|-------------|
+| `sessions` | id, title, created_at, last_active_at | Sesiones de conversación |
+| `messages` | id, session_id, role, content, intent, created_at | Mensajes con roles (user/assistant/system) |
 
-### Endpoints
+**Estructura:**
+```sql
+CREATE TABLE sessions (
+    id TEXT PRIMARY KEY,
+    title TEXT,
+    created_at TEXT NOT NULL,
+    last_active_at TEXT NOT NULL
+);
 
-| Método | Path | Descripción |
-|--------|------|-------------|
-| POST | `/suppliers` | Alta (con contrato opcional) |
-| PUT | `/suppliers/{id}` | Modificar |
-| DELETE | `/suppliers/{id}` | Baja lógica |
-| POST | `/suppliers/{id}/contract` | Asignar contrato |
-| GET | `/suppliers/{id}/check?amount=N` | Validar factura |
+CREATE TABLE messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    session_id TEXT NOT NULL,
+    role TEXT NOT NULL,          -- user | assistant | system
+    content TEXT NOT NULL,
+    intent TEXT,
+    created_at TEXT NOT NULL
+);
+```
 
-## 4. Agentes Implementados
+### 4.4 `data/inbox.db` — Cola de Facturas Pendientes
 
-### 4.1 Agentes Principales (ADK)
+| Tabla | Campos | Descripción |
+|-------|--------|-------------|
+| `inbox_items` | id, filename, size, status, invoice_id, supplier_id, supplier_name, amount, punto_venta, numero_comprobante, emisor_razon_social, emisor_cuit, tipo_comprobante, cae, codigo_barras, items_count, invoice_date, decision, rejection_reason, confirmation_id, uploaded_at, processed_at, file_path | Facturas en espera de procesamiento |
+
+### 4.5 `data/chroma_db/` — Vector Store (RAG)
+
+| Contenido | Descripción |
+|-----------|-------------|
+| `*.bin`, `*.sqlite` | Índices vectoriales de contratos |
+| Colección: `contracts` | Embeddings de fragmentos de contratos |
+
+---
+
+## 5. Agentes Implementados
+
+### 5.1 Agentes Principales (ADK)
 
 | Agente | Tipo | Responsabilidad | Output Key |
 |--------|------|----------------|------------|
@@ -241,13 +320,15 @@ Backend completo para gestión de proveedores y sus contratos. Ver [SPECS_012](.
 | **PaymentAgent** | LlmAgent (sub) | Persiste en SQLite | `payment_result` |
 | **InvoiceManagerAgent** | LlmAgent (sub) | Gestiona archivos y extracción | `invoice_data` |
 
-### 4.2 Agente Externo (A2A)
+### 5.2 Microservicios
 
-| Agente | Puerto | Responsabilidad |
-|--------|--------|-----------------|
-| **ExternalAuditorAgent** | 8003 | Auditoría de facturas escaladas |
+| Servicio | Puerto | Responsabilidad | DB |
+|---------|--------|-----------------|-----|
+| **Supplier Service** | 8001 | ABM de proveedores y contratos | `app/data/suppliers.db` |
+| **Contract Service** | 8002 | RAG con ChromaDB | `data/chroma_db/` |
+| **External Auditor** | 8003 | Auditoría A2A de facturas escaladas | — |
 
-### 4.3 State Compartido
+### 5.3 State Compartido
 
 ```python
 session.state = {
@@ -264,7 +345,7 @@ session.state = {
     "guardrail_reason": str,
     "validator_result": dict,    # {status, reason, supplier_data}
     "contract_result": dict,      # {status, contract_limit, fragment}
-    "payment_result": dict,      # {status, confirmation_id, payment_status}
+    "payment_result": dict,       # {status, confirmation_id, payment_status}
     
     # Decisión final
     "final_decision": dict       # {decision, rejection_reason, ...}
@@ -273,9 +354,9 @@ session.state = {
 
 ---
 
-## 5. Flujo de Negocio
+## 6. Flujo de Negocio
 
-### 5.1 Flujo A — Alta de Factura
+### 6.1 Flujo A — Alta de Factura
 
 ```
 ┌─────────────┐
@@ -289,8 +370,8 @@ session.state = {
 │  ┌──────────────────────────────────────────────────────────┐    │
 │  │ VR (7 reglas) — Validación Estructural                   │    │
 │  │ BR (10 reglas) — Reglas de Negocio                       │    │
-│  │ SR (5 reglas) — Seguridad                               │    │
-│  │ CR (3 reglas) — Continuidad                            │    │
+│  │ SR (5 reglas) — Seguridad                                │    │
+│  │ CR (3 reglas) — Continuidad                             │    │
 │  └──────────────────────────────────────────────────────────┘    │
 └──────┬─────────────────────────────────────────────────────────┘
        │
@@ -302,7 +383,7 @@ session.state = {
               │
               ▼
        ┌──────────────┐
-       │  VALIDATOR   │ ←── MCP mock (suppliers dict)
+       │  VALIDATOR   │ ←── Supplier Service (HTTP :8001)
        │   AGENT      │
        └──────┬───────┘
               │
@@ -312,7 +393,7 @@ session.state = {
                      │
                      ▼
               ┌──────────────┐
-              │  CONTRACT    │ ←── ChromaDB RAG
+              │  CONTRACT    │ ←── Contract Service (HTTP :8002)
               │   AGENT      │
               └──────┬───────┘
                      │
@@ -323,15 +404,9 @@ session.state = {
                             │
                             ▼
                      ┌──────────────┐
-                     │   PAYMENT    │ ←── SQLite
+                     │   PAYMENT    │ ←── SQLite (payments.db)
                      │   AGENT      │
                      └──────┬───────┘
-                            │
-                            ▼
-                     ┌──────────────┐
-                     │   SQLite     │
-                     │   payments.db│
-                     └──────────────┘
                             │
                             ▼
                      ┌─────────────────┐
@@ -340,7 +415,7 @@ session.state = {
                      └─────────────────┘
 ```
 
-### 5.2 Flujo B — Consulta de Estado
+### 6.2 Flujo B — Consulta de Estado
 
 ```
 ┌─────────────┐
@@ -366,31 +441,61 @@ session.state = {
 
 ---
 
-## 6. Estructura de Carpetas
+## 7. Estructura de Carpetas
 
 ```
 invoice_approval_system/
 │
-├── agent.py                     # Entry point ADK
+├── agent.py                     # Entry point ADK (legacy)
 ├── .env.example                 # Plantilla variables de entorno
+├── .env                         # Variables reales (NO commitear)
 ├── requirements.txt             # Dependencias Python
 ├── README.md                    # Este archivo
 ├── CHANGELOG.md                 # Historial de versiones
 ├── INSTALL.md                   # Guía de instalación
 │
 ├── agents/                      # Agentes ADK
-│   ├── orchestrator.py          # Agente principal
-│   ├── router_agent.py          # Clasificador de intenciones
+│   ├── orchestrator.py          # Agente principal (root)
+│   ├── router_agent.py          # Clasificador de intenciones (chat)
 │   ├── validator_agent.py       # Validador de proveedores
 │   ├── contract_agent.py        # Control contractual (RAG)
 │   ├── payment_agent.py         # Registro de pagos
 │   ├── invoice_manager_agent.py # Gestor de archivos
 │   └── __init__.py
 │
+├── app/                        # APLICAÇÃO PRINCIPAL (NO CORRIGIR)
+│   ├── backend/
+│   │   ├── main.py             # FastAPI Backend (puerto 8000)
+│   │   ├── settings.py         # Configuración
+│   │   ├── orchestrator.py     # Pipeline de procesamiento
+│   │   ├── service_clients.py  # Clientes HTTP a microservicios
+│   │   ├── watcher.py          # File watcher del inbox
+│   │   ├── inbox_router.py     # Endpoints de inbox
+│   │   ├── chat_router.py      # Endpoints de chat (GI)
+│   │   ├── new_invoices_router.py
+│   │   └── supplier_portal_router.py
+│   ├── frontend/               # Back Office (UI)
+│   │   ├── index.html
+│   │   ├── app.js
+│   │   ├── style.css
+│   │   └── InvoiceApprovalSystem.jsx
+│   ├── services/
+│   │   ├── supplier_service/   # Microservicio (puerto 8001)
+│   │   │   └── main.py
+│   │   └── contract_service/   # Microservicio (puerto 8002)
+│   │       └── main.py
+│   ├── scripts/
+│   │   ├── demo_real_workflow.py
+│   │   └── seed_inbox.py
+│   └── data/
+│       ├── suppliers.db         # SQLite: proveedores + contratos
+│       ├── contracts/           # Archivos .txt de contratos
+│       └── chroma_db/          # Vector store (RAG)
+│
 ├── tools/                       # Herramientas (FunctionTool)
-│   ├── supplier_mcp_tool.py     # Mock MCP de proveedores
-│   ├── rag_tool.py             # Wrapper ChromaDB
-│   ├── payment_db_tool.py      # SQLite operations
+│   ├── supplier_mcp_tool.py    # Mock MCP de proveedores
+│   ├── rag_tool.py            # Wrapper ChromaDB
+│   ├── payment_db_tool.py     # SQLite operations
 │   ├── invoice_status_tool.py  # Consulta de estado
 │   ├── folder_manager_tool.py  # Gestión de archivos
 │   ├── pdf_extractor_tool.py   # Extracción de PDF
@@ -422,50 +527,54 @@ invoice_approval_system/
 │   ├── metrics.py             # Métricas (accuracy, BERTscore)
 │   └── __init__.py
 │
-├── platform/                    # Backend y Frontend
-│   ├── backend/
-│   │   ├── main.py             # Servidor FastAPI
-│   │   ├── settings.py         # Configuración
-│   │   └── routers/            # Endpoints API
-│   ├── frontend/               # Back Office
-│   │   ├── index.html
-│   │   ├── app.js
-│   │   └── style.css
-│   └── services/               # Microservicios
-│       ├── supplier_service/
-│       └── contract_service/
-│
-├── supplier_portal/            # Portal del Proveedor
+├── supplier_portal/            # Portal del Proveedor (UI separada)
 │   ├── index.html
-│   ├── app.js
-│   └── style.css
+│   ├── style.css
+│   └── *.js
 │
 ├── a2a/                        # Protocolo Agent-to-Agent
-│   └── external_auditor_agent/ # Agente auditor externo
+│   └── external_auditor_agent/
+│       ├── agent.py
+│       └── server.py           # Puerto 8003
 │
-├── data/                       # Datos persistentes
-│   ├── payments.db            # SQLite (auto-generado)
-│   ├── chroma_db/            # Vector store (auto-generado)
-│   ├── contracts/            # Contratos .txt para RAG
-│   └── new_invoices/         # Facturas pendientes
+├── data/                       # DATOS PERSISTENTES
+│   ├── payments.db             # SQLite: facturas procesadas (114 registros)
+│   ├── chat_sessions.db        # SQLite: sesiones de chat (50 sesiones)
+│   ├── inbox.db                # SQLite: cola de facturas pendientes
+│   ├── contracts/              # Contratos .txt para RAG
+│   │   ├── contrato_proveedor_001.txt
+│   │   ├── contrato_proveedor_002.txt
+│   │   └── ...
+│   └── chroma_db/             # Vector store (auto-generado)
+│       ├── *.bin
+│       └── *.sqlite
 │
 ├── tests/                      # Tests
-│   └── eval/                  # Evaluación
+│   └── eval/
 │       ├── datasets/
 │       │   └── invoiceflow-dataset.json
-│       └── eval_config.yaml
+│       └── __init__.py
 │
-└── docs/                      # Documentación adicional
-    ├── especificacion_sistema_invoiceflow.md
-    ├── documento_guardrails_invoiceflow.md
-    ├── INSTALACION_WINDOWS.md
-    ├── INSTALACION_LINUX.md
-    └── INSTALACION_MACOS.md
+├── docs/                      # Documentación adicional
+│   ├── especificacion_sistema_invoiceflow.md
+│   ├── documento_guardrails_invoiceflow.md
+│   ├── GUIA_RAPIDA.md
+│   ├── INSTALACION_WINDOWS.md
+│   ├── INSTALACION_LINUX.md
+│   ├── INSTALACION_MACOS.md
+│   └── SPECS_*.md
+│
+├── start_servers.py            # Script de inicio (3 servicios)
+├── create_invoices.py          # Generador de facturas de prueba
+├── create_suppliers_db.py      # Crear DB de proveedores
+└── bugs/                        # Registro de bugs corregidos
+    ├── bugs_001.md ... bugs_022.md
+    └── README.md
 ```
 
 ---
 
-## 7. Instalación Rápida
+## 8. Instalación Rápida
 
 ### Requisitos Previos
 
@@ -500,36 +609,42 @@ cp .env.example .env
 python rag/ingest.py
 ```
 
-### Scripts Automatizados
+### Scripts Automatizados (Windows)
 
-| Script | Plataforma | Función |
-|--------|-----------|---------|
-| `INICIAR.bat` | Windows | Inicia los 3 servicios automáticamente |
-| `setup.bat` | Windows | Instala y configura todo |
-| `smoke_test.bat` | Windows | Verifica componentes |
+| Script | Función |
+|--------|---------|
+| `start_servers.py` | Inicia los 3 servicios automáticamente |
+| `INICIAR.bat` | Atajo para iniciar |
+| `setup.bat` | Instala y configura todo |
+| `smoke_test.bat` | Verifica componentes |
 
 ---
 
-## 8. Ejecución del Sistema
+## 9. Ejecución del Sistema
 
-### 8.1 Inicio Completo (3 terminales)
+### 9.1 Inicio Completo (3 servicios)
+
+```bash
+# Ejecutar desde invoice_approval_system/
+python start_servers.py
+```
+
+O manualmente:
 
 ```bash
 # Terminal 1 - Supplier Service
-python -m platform.services.supplier_service.main
+python -m app.services.supplier_service.main
 # Puerto: 8001
 
 # Terminal 2 - Contract Service
-python -m platform.services.contract_service.main
+python -m app.services.contract_service.main
 # Puerto: 8002
 
 # Terminal 3 - Backend
-cd platform/backend
-python main.py
-# Puerto: 8000
+python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 8000
 ```
 
-### 8.2 URLs del Sistema
+### 9.2 URLs del Sistema
 
 | Servicio | URL | Descripción |
 |----------|-----|-------------|
@@ -539,24 +654,25 @@ python main.py
 | **API Docs (Supplier)** | http://localhost:8001/docs | API de proveedores |
 | **API Docs (Contract)** | http://localhost:8002/docs | API de contratos |
 
-### 8.3 Verificación de Salud
+### 9.3 Verificación de Salud
 
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8001/health
 curl http://localhost:8002/health
+curl http://localhost:8000/agents/health  # Todos los servicios
 ```
 
 ---
 
-## 9. Ejemplos de Uso
+## 10. Ejemplos de Uso
 
-### 9.1 Ejemplo A — Factura Aprobada
+### 10.1 Ejemplo A — Factura Aprobada
 
 **Input:**
 ```json
 {
-  "invoice_id": "INV-001",
+  "invoice_id": "FC-0001-00000001",
   "supplier_id": "SUP001",
   "supplier_name": "TechCorp SA",
   "amount": 50000,
@@ -575,74 +691,41 @@ curl http://localhost:8002/health
 }
 ```
 
-### 9.2 Ejemplo B — Supera Límite Contractual
+### 10.2 Ejemplo B — Supera Límite Contractual
 
-**Input:**
-```json
-{
-  "invoice_id": "INV-002",
-  "supplier_id": "SUP001",
-  "supplier_name": "TechCorp SA",
-  "amount": 200000,
-  "currency": "ARS",
-  "invoice_date": "2025-06-02"
-}
-```
+**Input:** `amount: 200000` para SUP001 (límite: $150,000)
 
 **Resultado:** `REJECTED` — "Monto $200,000 excede el límite contractual de $150,000"
 
-### 9.3 Ejemplo C — Proveedor Inactivo
+### 10.3 Ejemplo C — Proveedor Inactivo
 
-**Input:**
-```json
-{
-  "invoice_id": "INV-003",
-  "supplier_id": "SUP003",
-  "supplier_name": "Servicios Rápidos SA",
-  "amount": 10000,
-  "currency": "ARS",
-  "invoice_date": "2025-06-03"
-}
-```
+**Input:** `supplier_id: "SUP003"` (status: INACTIVE)
 
-**Resultado:** `REJECTED` — "Proveedor inactivo"
+**Resultado:** `REJECTED` — "Proveedor SUP003 está INACTIVE (no activo)"
 
-### 9.4 Ejemplo D — Escalado por Monto
+### 10.4 Ejemplo D — Contrato Modo EXACTO
 
-**Input:**
-```json
-{
-  "invoice_id": "INV-004",
-  "supplier_id": "SUP005",
-  "supplier_name": "Consultoría Digital SA",
-  "amount": 600000,
-  "currency": "ARS",
-  "invoice_date": "2025-06-04"
-}
-```
+**Input:** `amount: 50000` para SUP007 (contrato modo EXACTO: $100,000)
 
-**Resultado:** `ESCALATED` → `PENDING_HUMAN_REVIEW`
+**Resultado:** `REJECTED` — "Contrato modo EXACTO: el monto $50,000 debe ser exactamente $100,000"
 
-### 9.5 Ejemplo E — Datos Incompletos
+### 10.5 Asistente GI — Comandos
 
-**Input:**
-```json
-{
-  "invoice_id": "INV-006",
-  "supplier_id": "SUP002",
-  "supplier_name": "Papelería Norte SRL",
-  "amount": 15000,
-  "currency": "ARS"
-}
-```
-
-**Resultado:** `REJECTED` — "Datos incompletos: invoice_date"
+| Comando | Acción |
+|---------|--------|
+| "resumen" | Overview del sistema |
+| "me podés decir los montos" | Lista montos del inbox + total |
+| "mostrame el historial" | Pagos registrados |
+| "procesá la factura FC-0001-00000001" | Procesa una específica |
+| "cambia el límite de SUP001 a 200000" | Modifica `contracts.contract_limit` |
+| "activá SUP003" / "desactivá SUP003" | Cambia `suppliers.status` |
+| "eliminá SUP003" + "sí" | Baja lógica con confirmación |
 
 ---
 
-## 10. Evaluación y Testing
+## 11. Evaluación y Testing
 
-### 10.1 Golden Cases (20 casos)
+### 11.1 Golden Cases (20 casos)
 
 ```bash
 python -m evaluation.metrics
@@ -656,22 +739,54 @@ GC002 ... PASS (judge=1.00, bert_f1=0.88)
 Pass rate: 20/20 (100.0%) | Avg BertScore F1: 0.89
 ```
 
-### 10.2 Smoke Tests (componentes individuales)
+### 11.2 Smoke Tests
 
 ```bash
-python -m guardrails.invoice_guardrail
-python -m tools.supplier_mcp_tool
-python -m tools.rag_tool
-python -m tools.payment_db_tool
-python -m agents.validator_agent
-python -m agents.contract_agent
-python -m agents.payment_agent
-python -m agents.orchestrator
+# Verificar imports
+python test_imports.py
+
+# Verificar DB
+python check_db.py
+
+# Probar flujo completo
+python test_full_flow.py
 ```
 
 ---
 
-## 11. Troubleshooting
+## 12. API Reference
+
+### Endpoints Principales
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/invoices/new` | Procesar nueva factura |
+| GET | `/api/invoices/{id}/status` | Consultar estado |
+| POST | `/chat` | Chat con router agent |
+| GET | `/health` | Health check |
+| GET | `/agents/health` | Health de todos los servicios |
+| GET | `/suppliers/proxy-list` | Lista proveedores (proxy) |
+| POST | `/suppliers/proxy-create` | Crear proveedor (proxy) |
+| PUT | `/suppliers/proxy-update/{id}` | Modificar proveedor (proxy) |
+| DELETE | `/suppliers/proxy-delete/{id}` | Eliminar proveedor (proxy) |
+| GET | `/suppliers/proxy-contracts` | Lista contratos (proxy) |
+
+### Esquema de Factura
+
+```json
+{
+  "invoice_id": "string (único, ej: FC-0001-00000001)",
+  "supplier_id": "string (formato: SUP###)",
+  "supplier_name": "string",
+  "amount": "number (positivo)",
+  "currency": "string (3 letras, ej: ARS)",
+  "invoice_date": "string (YYYY-MM-DD)"
+}
+```
+
+---
+
+## 13. Troubleshooting
 
 ### Error: "ModuleNotFoundError: No module named 'agents'"
 
@@ -708,42 +823,11 @@ set PYTHONIOENCODING=utf-8
 
 ---
 
-## 12. API Reference
-
-### Endpoints Principales
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/api/invoices/new` | Procesar nueva factura |
-| GET | `/api/invoices/{id}/status` | Consultar estado |
-| POST | `/api/chat` | Chat con router agent |
-| GET | `/health` | Health check |
-| GET | `/api/suppliers/{id}` | Datos de proveedor |
-
-### Esquema de Factura
-
-```json
-{
-  "invoice_id": "string (único)",
-  "supplier_id": "string (formato: SUP###)",
-  "supplier_name": "string",
-  "amount": "number (positivo)",
-  "currency": "string (3 letras, ej: ARS)",
-  "invoice_date": "string (YYYY-MM-DD)"
-}
-```
-
----
-
-## 13. Licencia y Créditos
+## 14. Licencia y Créditos
 
 ### Licencia
 
 Este proyecto es **académico** y fue desarrollado con fines educativos para la materia de Sistemas Multiagentes de la Universidad de Palermo (2025).
-
-### Autores
-
-- Equipo de desarrollo InvoiceFlow
 
 ### Tecnologías Utilizadas
 
@@ -770,31 +854,8 @@ Este proyecto es **académico** y fue desarrollado con fines educativos para la 
 | [`docs/INSTALACION_WINDOWS.md`](docs/INSTALACION_WINDOWS.md) | Guía para Windows |
 | [`docs/INSTALACION_LINUX.md`](docs/INSTALACION_LINUX.md) | Guía para Linux |
 | [`docs/INSTALACION_MACOS.md`](docs/INSTALACION_MACOS.md) | Guía para macOS |
+| [`bugs/README.md`](bugs/README.md) | Registro de bugs corregidos |
 
 ---
 
-*InvoiceFlow v2.2.0 — Universidad de Palermo 2026*
-
-## 📦 Repositorio Git
-- El código fuente está disponible en: https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque
-
-### GITHUB
-- or create a new repository on the command line echo "# multiagentes_clinicaparque" >> README.md
-
-- - git init
-- - git add README.md
-- - git commit -m "first commit"
-- - git branch -M main
-- - git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
-- - git push -u origin main
-
-- or push an existing repository from the command line
-
-- - git remote add origin https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git
-- - git branch -M main
-- - git push -u origin main
-
-#### credenciales git
-
-usr: giselle.fernandezv@gmail.com pwd: Calitamendoza1603
-Probando
+*InvoiceFlow v2.3.0 — Universidad de Palermo 2026*

@@ -4,7 +4,54 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
-## [2.2.0] — 2026-07-15
+## [2.3.1] — 2026-07-17
+
+### 🐛 Fixed
+
+**Fix de paths y documentación**:
+- Corrección de imports en A2A server.py (`from .agent`)
+- Fix de paths de módulos en scripts de inicio (`platform` → `app`)
+- Agregado de estilos CSS para componente status-summary
+- Actualización de .gitignore
+- Limpieza de archivos de test en processed/
+
+---
+
+## [2.3.0] — 2026-07-13
+
+### ✨ Added
+
+**Observabilidad Completa V3** — Sistema de monitoreo integral:
+
+- **Health Score dinámico** con cálculo ponderado (100% = healthy, 70% = degraded, <70% = unhealthy)
+- **8 secciones de monitoreo** en la UI:
+  - 🔴 **Servicios**: Backend, Supplier Service, Contract Service, MCP Toolbox, External Auditor A2A
+  - 🗄️ **Bases de Datos**: suppliers.db, payments.db, chat_sessions.db, inbox.db con métricas
+  - 🔧 **Integraciones MCP**: Toolbox server status, herramientas configuradas, comando de inicio
+  - 📚 **RAG / ChromaDB**: Collections, documentos indexados, estado del índice
+  - 📁 **Sistema de Archivos**: inbox, processed, rejected, new_invoices, contracts
+  - 📋 **Logs del Sistema**: Distribución por niveles (INFO/WARNING/ERROR), errores recientes
+  - 🤖 **Agentes IA**: Router, Validator, Orchestrator, Contract, Payment, Invoice Manager
+  - 🔗 **Integración A2A**: External Auditor, agentes registrados
+
+- **Tracking de logs mejorado**:
+  - Conteo por nivel de severidad
+  - Errores y warnings recientes
+  - Distribución temporal de entradas
+  - Span del log (duración de sesión)
+
+- **Endpoint `/health/observability`** completo con fallback robusto
+
+**Archivos modificados/creados**:
+- `app/backend/health_extended.py` — Módulo V3 completo con manejo de errores
+- `app/frontend/index.html` — Nueva estructura de página observabilidad
+- `app/frontend/observability.js` — Funciones de renderizado + fallback
+- `app/frontend/observability.css` — Estilos para observabilidad
+- `docs/SPECS_OBSERVABILIDAD.md` — Documentación V3.0.0
+
+---
+
+## [2.2.0] — 2026-07-13
 
 ### ✨ Added
 
@@ -25,7 +72,7 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
-## [2.1.0] — 2026-07-15
+## [2.1.0] — 2026-07-13
 
 ### 🐛 Fixed
 
@@ -44,7 +91,7 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
-## [2.0.0] — 2026-07-15
+## [2.0.0] — 2026-07-13
 
 ### 🎉 Release Final — Sistema 100% Operativo
 
@@ -87,7 +134,7 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ### 🐛 Fixed
 
-**20 bugs resueltos** (ver `bugs/`):
+**20+ bugs resueltos** (ver `bugs/`):
 
 | Componente | Bugs | Descripción |
 |------------|------|-------------|
@@ -107,7 +154,7 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 ### ✅ Validación Completa del Sistema
 
 ```
-FULL_ANALYSIS_REPORT.json — 2026-07-15
+FULL_ANALYSIS_REPORT.json — 2026-07-13
 ├── 60/60 checks PASS (100%)
 ├── 6/6 Golden Cases PASS (100%)
 ├── Pass Rate: 100.0%
@@ -134,7 +181,7 @@ FULL_ANALYSIS_REPORT.json — 2026-07-15
 
 > ℹ️ **Nota**: La versión 1.1.0 fue skippeada. Toda la funcionalidad planeada se integró en v2.0.0.
 
-## [1.1.0] — 2025-07-15
+## [1.1.0] — 2025-07-13
 
 ### 🎯 Características Planned
 
@@ -290,6 +337,14 @@ FULL_ANALYSIS_REPORT.json — 2026-07-15
 
 ## Migración entre Versiones
 
+### De 2.2.x a 2.3.0
+
+```bash
+# 1. Limpiar caché del navegador
+# 2. Los nuevos archivos JS/CSS se cargan automáticamente
+# 3. Endpoint /health/observability disponible
+```
+
 ### De 0.9.x a 1.0.0
 
 ```bash
@@ -316,20 +371,18 @@ guardrails/rules.yaml
 
 ## Roadmap
 
-### [2.1.0] — Q3 2026
+### [2.4.0] — Q3 2026
 - [ ] Persistencia de sesiones de chat con títulos editables
 - [ ] Streaming de respuestas (Server-Sent Events)
 - [ ] Sugerencias de acciones (autocomplete)
 - [ ] Integración real con PDF (parser de PDF con Gemini)
-- [ ] Subida de archivos al modal de contratos
-- [ ] Multi-idioma (i18n)
+- [ ] Mejoras de UI/UX en el dashboard
 
-### [2.2.0] — Q4 2026
+### [2.5.0] — Q4 2026
 - [ ] Dashboard en tiempo real con WebSockets
 - [ ] Notificaciones push al proveedor
 - [ ] Exportación de reportes en PDF/Excel
 - [ ] Integración con sistema contable externo
-- [ ] Machine Learning para predicción de fraude
 
 ### [3.0.0] — 2027
 - [ ] Microservicios con Kubernetes
@@ -366,4 +419,4 @@ Este proyecto es **académico** y fue desarrollado con fines educativos.
 
 ---
 
-*Última actualización: 2026-07-15*
+*Última actualización: 2026-07-17*
