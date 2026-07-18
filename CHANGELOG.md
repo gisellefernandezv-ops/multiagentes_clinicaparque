@@ -4,6 +4,36 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
+## [3.0.2] — 2026-07-18
+
+### 🐛 Fixed
+
+**Sistema de Logging Centralizado:**
+- Nuevo módulo `app/backend/logger.py` con logging configurado
+- Logs guardados en `data/logs/invoiceflow.log`
+- Rotación automática (10MB por archivo, 5 backups)
+- Console + file handlers
+
+**Script de Inicio Completo:**
+- Nuevo `start_all.py` que inicia todos los servicios
+- Incluye MCP Toolbox (5000), Backend (8000), Supplier (8001), Contract (8002), External Auditor (8003)
+- Verificación de puertos y espera de disponibilidad
+- Gestión de procesos (inicio/detención con Ctrl+C)
+
+---
+
+## [3.0.1] — 2026-07-18
+
+### 🐛 Fixed
+
+**Fix de paths y documentación:**
+- Corrección de imports en A2A server.py
+- Fix de paths de módulos en scripts de inicio
+- Actualización de .gitignore
+- Limpieza de archivos de test en processed/
+
+---
+
 ## [3.0.0] — 2026-07-18
 
 ### 🎉 Release Final — Sistema Multiagente Completo

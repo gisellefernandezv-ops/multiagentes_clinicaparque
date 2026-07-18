@@ -35,6 +35,10 @@ from .chat_router import router as chat_router
 from .new_invoices_router import router as new_invoices_router
 from .supplier_portal_router import router as supplier_portal_router
 from .health_extended import get_full_observability
+from .logger import setup_logging, get_logger
+
+# Configurar logging centralizado
+logger = setup_logging(PROJECT_ROOT)
 
 
 # Watcher global (lo iniciamos en lifespan)
@@ -44,21 +48,22 @@ watcher: InboxWatcher | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global watcher
-    print(f"[backend] Iniciando InvoiceFlow backend en puerto {settings.port}")
-    print(f"[backend] Frontend: {settings.frontend_dir}")
-    print(f"[backend] Inbox:    {settings.inbox_dir}")
-    print(f"[backend] Processed:{settings.processed_dir}")
-    print(f"[backend] Supplier service URL: {settings.supplier_service_url}")
-    print(f"[backend] Contract service URL: {settings.contract_service_url}")
+    logger.info(f"Iniciando InvoiceFlow backend en puerto {settings.port}")
+    logger.info(f"Frontend: {settings.frontend_dir}")
+    logger.info(f"Inbox: {settings.inbox_dir}")
+    logger.info(f"Processed: {settings.processed_dir}")
+    logger.info(f"Supplier service URL: {settings.supplier_service_url}")
+    logger.info(f"Contract service URL: {settings.contract_service_url}")
+    logger.info("Watcher habilitado" if settings.enable_watcher else "Watcher deshabilitado")
 
     if settings.enable_watcher:
         def auto_process_invoice(path: Path):
             """Procesa automaticamente una factura nueva en el inbox."""
-            print(f"[watcher] Procesando archivo: {path.name}")
+            logger.info(f"[watcher] Procesando archivo: {path.name}")
             try:
                 invoice = parse_invoice_file(path)
                 if not invoice:
-                    print(f"[watcher] No se pudo parsear {path.name}, moviendo a rejected/")
+                    logger.warning(f"[watcher] No se pudo parsear {path.name}, moviendo a rejected/")
                     move_file(path, settings.rejected_dir)
                     return
                 
@@ -67,20 +72,22 @@ async def lifespan(app: FastAPI):
                 
                 if decision in {"APPROVED", "REJECTED", "ESCALATED"}:
                     move_file(path, settings.processed_dir)
-                    print(f"[watcher] Procesada: {path.name} -> {decision}")
+                    logger.info(f"[watcher] Procesada: {path.name} -> {decision}")
                 else:
-                    print(f"[watcher] Decision desconocida: {decision} para {path.name}")
+                    logger.warning(f"[watcher] Decision desconocida: {decision} para {path.name}")
                     
             except Exception as e:
-                print(f"[watcher] Error procesando {path.name}: {e}")
+                logger.error(f"[watcher] Error procesando {path.name}: {e}")
                 move_file(path, settings.rejected_dir)
         
         watcher = InboxWatcher(on_new_file=auto_process_invoice)
         watcher.start()
+        logger.info("[watcher] File watcher iniciado")
     yield
 
     if watcher:
         watcher.stop()
+        logger.info("[watcher] File watcher detenido")
 
 
 app = FastAPI(

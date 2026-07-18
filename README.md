@@ -575,26 +575,36 @@ netstat -ano | findstr :8003
 taskkill /PID <NUMERO_PID> /F
 ```
 
-### 9.2 Inicio Automático
+### 9.2 Inicio Automático (RECOMENDADO)
 
 ```bash
 # Ejecutar desde la carpeta invoice_approval_system
-python start_servers.py
+python start_all.py
 ```
 
-### 9.3 Inicio Manual (4 terminales)
+Este script inicia **todos los servicios automáticamente**:
+- Puerto 5000: MCP Toolbox Server
+- Puerto 8000: Backend FastAPI
+- Puerto 8001: Supplier Service
+- Puerto 8002: Contract Service
+- Puerto 8003: External Auditor A2A
+
+### 9.3 Inicio Manual (5 terminales)
 
 ```bash
-# Terminal 1 - Supplier Service (Puerto 8001)
-python -m uvicorn app.services.supplier_service.main:app --host 127.0.0.1 --port 8001
-
-# Terminal 2 - Contract Service (Puerto 8002)
-python -m uvicorn app.services.contract_service.main:app --host 127.0.0.1 --port 8002
-
-# Terminal 3 - MCP Toolbox (Puerto 5000)
+# Terminal 1 - MCP Toolbox (Puerto 5000)
 python -m uvicorn app.services.toolbox_server.main:app --host 127.0.0.1 --port 5000
 
-# Terminal 4 - Backend (Puerto 8000)
+# Terminal 2 - Supplier Service (Puerto 8001)
+python -m uvicorn app.services.supplier_service.main:app --host 127.0.0.1 --port 8001
+
+# Terminal 3 - Contract Service (Puerto 8002)
+python -m uvicorn app.services.contract_service.main:app --host 127.0.0.1 --port 8002
+
+# Terminal 4 - External Auditor A2A (Puerto 8003)
+python -m uvicorn a2a.external_auditor_agent.server:app --host 127.0.0.1 --port 8003
+
+# Terminal 5 - Backend (Puerto 8000)
 python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
@@ -608,6 +618,8 @@ python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 8000 --reload
 | **Health Check** | http://localhost:8000/health | Estado del sistema |
 | **Agentes Health** | http://localhost:8000/agents/health | Estado de todos los agentes |
 | **Observabilidad** | http://localhost:8000/ | Pestaña de observabilidad en BackOffice |
+| **MCP Toolbox** | http://localhost:5000/ | Herramientas predefinidas |
+| **External Auditor** | http://localhost:8003/ | Auditoría A2A |
 
 ### 9.5 Verificación Post-Inicio
 
@@ -618,10 +630,30 @@ curl http://localhost:8000/health
 # 2. Health check de microservicios
 curl http://localhost:8001/health
 curl http://localhost:8002/health
+curl http://localhost:8003/health
 curl http://localhost:5000/health
 
 # 3. Verificar agentes
 curl http://localhost:8000/agents/health
+
+# 4. Verificar logs
+type data\logs\invoiceflow.log
+```
+
+### 9.6 Logging
+
+Los logs se guardan automáticamente en:
+```
+data/logs/invoiceflow.log
+```
+
+Con rotación automática (10MB por archivo, 5 backups). Para ver logs en tiempo real:
+```bash
+# Windows
+type data\logs\invoiceflow.log
+
+# Linux/macOS
+cat data/logs/invoiceflow.log
 ```
 
 ---
