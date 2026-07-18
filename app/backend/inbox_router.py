@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 
 from .settings import settings
+from .logger import get_logger
 from .orchestrator import process_invoice
 from .watcher import parse_invoice_file, move_file
 
