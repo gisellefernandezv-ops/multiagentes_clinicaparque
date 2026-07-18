@@ -2,6 +2,16 @@
 // OBSERVABILIDAD COMPLETA V3 - loadObservability()
 // ============================================================
 
+// Función global para recargar observabilidad
+window.reloadObservability = function() {
+    loadObservability();
+};
+
+// Función global para recargar SOLO logs
+window.reloadLogs = function() {
+    loadLogsDirectly();
+};
+
 async function loadObservability() {
     const banner = document.getElementById('obs-health-banner');
     if (!banner) return;
@@ -42,6 +52,67 @@ async function loadObservability() {
             showFallbackUI();
         }
     }
+}
+
+// Cargar logs directamente desde el endpoint
+async function loadLogsDirectly() {
+    const el = document.getElementById('obs-logs-content');
+    if (!el) return;
+    
+    el.innerHTML = '<div style="text-align:center;padding:20px;"><span style="font-size:24px;">🔄</span><br>Cargando logs...</div>';
+    
+    try {
+        // Obtener 500 líneas de logs
+        const resp = await fetch(API + '/logs/recent?lines=500');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        
+        const data = await resp.json();
+        displayAllLogs(el, data);
+    } catch (err) {
+        el.innerHTML = '<div class="obs-metrics"><span class="obs-metric error">🔴 Error</span></div><div style="color:#ef4444;padding:10px;">Error al cargar logs: ' + err.message + '</div>';
+    }
+}
+
+function displayAllLogs(el, data) {
+    if (!data.entries) {
+        el.innerHTML = '<div class="obs-metrics"><span class="obs-metric warning">📋 Sin datos</span></div>';
+        return;
+    }
+    
+    const entries = data.entries;
+    const levels = data.level_counts || {};
+    const totalErrors = entries.filter(e => e.level === 'ERROR').length;
+    const totalWarnings = entries.filter(e => e.level === 'WARNING').length;
+    
+    let html = '<div style="margin-bottom:10px;"><button onclick="reloadLogs()" style="background:#333;color:#fff;border:1px solid #555;padding:4px 8px;cursor:pointer;border-radius:4px;font-size:11px;">🔄 Recargar</button></div>';
+    html += '<div class="obs-metrics"><span class="obs-metric ' + (totalErrors > 0 ? 'error' : 'ok') + '">📋 ' + (data.total_lines || entries.length) + ' entradas totales</span><span class="obs-metric error">🔴 ' + totalErrors + ' errores</span><span class="obs-metric warning">⚠️ ' + totalWarnings + ' warnings</span></div>';
+    
+    // Distribución
+    html += '<div class="obs-subsection"><strong>Distribucion:</strong></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">';
+    if (levels.INFO) html += '<span style="color:#22c55e;">● ' + levels.INFO + ' INFO</span>';
+    if (levels.WARNING) html += '<span style="color:#eab308;">● ' + levels.WARNING + ' WARN</span>';
+    if (levels.ERROR) html += '<span style="color:#ef4444;">● ' + levels.ERROR + ' ERROR</span>';
+    if (levels.DEBUG) html += '<span style="color:#888;">● ' + levels.DEBUG + ' DEBUG</span>';
+    html += '</div>';
+    
+    // TODOS LOS LOGS
+    html += '<div class="obs-subsection" style="margin-top:15px;border-top:1px solid #333;padding-top:10px;"><strong>📜 TODOS LOS LOGS (' + entries.length + '):</strong></div>';
+    html += '<div style="max-height:500px;overflow-y:auto;background:#1a1a1a;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;line-height:1.4;">';
+    
+    for (const entry of entries) {
+        const level = entry.level || 'INFO';
+        let color = '#22c55e';
+        let bg = 'transparent';
+        if (level === 'WARNING') { color = '#eab308'; bg = 'rgba(234,179,8,0.1)'; }
+        else if (level === 'ERROR') { color = '#ef4444'; bg = 'rgba(239,68,68,0.15)'; }
+        else if (level === 'DEBUG') { color = '#888'; }
+        
+        const msg = entry.message || '';
+        html += '<div style="color:' + color + ';background:' + bg + ';padding:2px 4px;margin:1px 0;border-radius:2px;word-break:break-all;">' + escapeHtml(msg) + '</div>';
+    }
+    html += '</div>';
+    
+    el.innerHTML = html;
 }
 
 // Fallback que usa los endpoints existentes
@@ -93,14 +164,26 @@ function updateObservabilityBanner(data) {
     const score = data.health_score || 0;
     const status = data.status || 'unknown';
     const timestamp = data.timestamp ? new Date(data.timestamp).toLocaleTimeString('es-AR') : '-';
+    
+    // Verificar servicios caídos
+    const services = data.services?.services || {};
+    const metrics = data.services?.metrics || {};
+    const downCount = metrics.down || 0;
+    const totalCount = metrics.total || 0;
 
     let statusIcon = '✅', statusClass = 'ok';
     if (status === 'degraded') { statusIcon = '⚠️'; statusClass = 'warning'; }
     else if (status === 'unhealthy') { statusIcon = '❌'; statusClass = 'error'; }
     else if (status === 'error') { statusIcon = '⚠️'; statusClass = 'warning'; }
+    
+    // Agregar advertencia de servicios caídos
+    let downWarning = '';
+    if (downCount > 0) {
+        downWarning = '<br><span style="color:#ef4444;font-size:11px;">⚠️ ' + downCount + ' servicio(s) caídos - Ver sección Servicios</span>';
+    }
 
     banner.className = 'status-summary ' + statusClass;
-    banner.innerHTML = '<span class="status-icon">' + statusIcon + '</span><span class="status-text"><strong>Health Score: ' + score + '% - ' + status.toUpperCase() + '</strong><br><small>Ultima actualizacion: ' + timestamp + '</small></span>';
+    banner.innerHTML = '<span class="status-icon">' + statusIcon + '</span><span class="status-text"><strong>Health Score: ' + score + '% - ' + status.toUpperCase() + '</strong><br><small>Ultima actualizacion: ' + timestamp + downWarning + '</small></span>';
 }
 
 function updateObservabilityBannerFallback(data) {
@@ -123,19 +206,81 @@ function updateServicesSection(services) {
 
     const metrics = services.metrics || {};
     const all = services.services;
+    
+    // Separar servicios caídos de los activos
+    const downCritical = [];
+    const downSecondary = [];
+    const upServices = [];
+    
+    for (const [name, svc] of Object.entries(all)) {
+        const ok = svc.status?.ok;
+        const svcInfo = {name, svc};
+        if (svc.type === 'critical') {
+            if (ok) upServices.push(svcInfo);
+            else downCritical.push(svcInfo);
+        } else {
+            if (ok) upServices.push(svcInfo);
+            else downSecondary.push(svcInfo);
+        }
+    }
+    
     let html = '<div class="obs-metrics"><span class="obs-metric ' + (metrics.all_critical_healthy ? 'ok' : 'error') + '">🔴 ' + (metrics.up || 0) + '/' + (metrics.total || 0) + ' servicios</span></div>';
-    html += '<div class="obs-subsection"><strong>Criticos:</strong></div>';
-    for (const [name, svc] of Object.entries(all)) {
-        if (svc.type !== 'critical') continue;
-        const ok = svc.status?.ok;
-        html += '<div class="obs-item ' + (ok ? 'ok' : 'error') + '"><span>' + (ok ? '🟢' : '🔴') + '</span><span>' + name + '</span><span class="obs-detail">' + (svc.status?.status || 'unknown') + '</span></div>';
+    
+    // PRIMERO: Servicios caídos (CRÍTICOS) - los más importantes
+    if (downCritical.length > 0) {
+        html += '<div class="obs-subsection" style="color:#ef4444;"><strong>🔴 SERVICIOS CRÍTICOS CAÍDOS:</strong></div>';
+        for (const {name, svc} of downCritical) {
+            const status = svc.status?.status || 'unknown';
+            const url = svc.url || '';
+            const responseTime = svc.status?.response_time_ms ? (svc.status.response_time_ms/1000).toFixed(2) + 's' : '-';
+            html += '<div class="obs-item error" style="background:#2a0a0a;padding:8px;border-radius:4px;margin:4px 0;">';
+            html += '<div style="font-weight:bold;color:#ef4444;">🔴 ' + name + '</div>';
+            html += '<div style="font-size:11px;color:#888;margin-left:20px;">';
+            html += '<div>Estado: <span style="color:#ef4444;">' + status + '</span></div>';
+            html += '<div>URL: ' + url + '</div>';
+            html += '<div>Respuesta: ' + responseTime + '</div>';
+            html += '</div></div>';
+        }
     }
-    html += '<div class="obs-subsection" style="margin-top:10px;"><strong>Secundarios:</strong></div>';
-    for (const [name, svc] of Object.entries(all)) {
-        if (svc.type !== 'secondary') continue;
-        const ok = svc.status?.ok;
-        html += '<div class="obs-item ' + (ok ? 'ok' : 'warning') + '"><span>' + (ok ? '🟢' : '🟡') + '</span><span>' + name + '</span><span class="obs-detail">' + (svc.status?.status || 'unknown') + '</span></div>';
+    
+    // SEGUNDO: Servicios caídos (SECUNDARIOS)
+    if (downSecondary.length > 0) {
+        html += '<div class="obs-subsection" style="color:#eab308;"><strong>🟡 SERVICIOS SECUNDARIOS CAÍDOS:</strong></div>';
+        for (const {name, svc} of downSecondary) {
+            const status = svc.status?.status || 'unknown';
+            const url = svc.url || '';
+            html += '<div class="obs-item warning" style="background:#2a2a0a;padding:8px;border-radius:4px;margin:4px 0;">';
+            html += '<div style="font-weight:bold;color:#eab308;">🟡 ' + name + '</div>';
+            html += '<div style="font-size:11px;color:#888;margin-left:20px;">';
+            html += '<div>Estado: <span style="color:#eab308;">' + status + '</span></div>';
+            html += '<div>URL: ' + url + '</div>';
+            html += '</div></div>';
+        }
     }
+    
+    // TERCERO: Servicios activos (CRÍTICOS)
+    html += '<div class="obs-subsection"><strong>🟢 Criticos activos:</strong></div>';
+    let hasCritical = false;
+    for (const [name, svc] of Object.entries(all)) {
+        if (svc.type !== 'critical' || !svc.status?.ok) continue;
+        hasCritical = true;
+        const status = svc.status?.status || 'ok';
+        const responseTime = svc.status?.response_time_ms ? (svc.status.response_time_ms/1000).toFixed(3) + 's' : '-';
+        html += '<div class="obs-item ok"><span>🟢</span><span>' + name + '</span><span class="obs-detail">' + status + ' (' + responseTime + ')</span></div>';
+    }
+    if (!hasCritical) html += '<div style="color:#888;font-size:12px;padding-left:10px;">Ninguno</div>';
+    
+    // CUARTO: Servicios activos (SECUNDARIOS)
+    html += '<div class="obs-subsection" style="margin-top:10px;"><strong>🟢 Secundarios activos:</strong></div>';
+    let hasSecondary = false;
+    for (const [name, svc] of Object.entries(all)) {
+        if (svc.type !== 'secondary' || !svc.status?.ok) continue;
+        hasSecondary = true;
+        const status = svc.status?.status || 'ok';
+        html += '<div class="obs-item ok"><span>🟢</span><span>' + name + '</span><span class="obs-detail">' + status + '</span></div>';
+    }
+    if (!hasSecondary) html += '<div style="color:#888;font-size:12px;padding-left:10px;">Ninguno</div>';
+    
     el.innerHTML = html;
 }
 
@@ -148,16 +293,46 @@ function updateServicesSectionFallback(data) {
     const criticalCount = Object.values(critical).filter(s => s.ok).length;
     const totalCount = criticalCount + Object.values(secondary).filter(s => s.ok).length;
     
+    // Separar caídos de activos
+    const criticalDown = Object.entries(critical).filter(([,s]) => !s.ok);
+    const criticalUp = Object.entries(critical).filter(([,s]) => s.ok);
+    const secondaryDown = Object.entries(secondary).filter(([,s]) => !s.ok);
+    const secondaryUp = Object.entries(secondary).filter(([,s]) => s.ok);
+    
     let html = '<div class="obs-metrics"><span class="obs-metric ' + (data.status === 'ok' ? 'ok' : 'error') + '">🔴 ' + totalCount + '/' + (Object.keys(critical).length + Object.keys(secondary).length) + ' servicios</span></div>';
     
-    html += '<div class="obs-subsection"><strong>Criticos:</strong></div>';
-    for (const [name, svc] of Object.entries(critical)) {
-        html += '<div class="obs-item ' + (svc.ok ? 'ok' : 'error') + '"><span>' + (svc.ok ? '🟢' : '🔴') + '</span><span>' + name + '</span><span class="obs-detail">' + (svc.status || 'unknown') + '</span></div>';
+    // PRIMERO: Servicios caídos críticos
+    if (criticalDown.length > 0) {
+        html += '<div class="obs-subsection" style="color:#ef4444;"><strong>🔴 CRÍTICOS CAÍDOS:</strong></div>';
+        for (const [name, svc] of criticalDown) {
+            html += '<div class="obs-item error" style="background:#2a0a0a;padding:8px;border-radius:4px;margin:4px 0;">';
+            html += '<div style="font-weight:bold;">🔴 ' + name + '</div>';
+            html += '<div style="font-size:11px;color:#888;margin-left:20px;">Estado: <span style="color:#ef4444;">' + (svc.status || 'unknown') + '</span></div>';
+            html += '</div>';
+        }
     }
     
-    html += '<div class="obs-subsection" style="margin-top:10px;"><strong>Secundarios:</strong></div>';
-    for (const [name, svc] of Object.entries(secondary)) {
-        html += '<div class="obs-item ' + (svc.ok ? 'ok' : 'warning') + '"><span>' + (svc.ok ? '🟢' : '🟡') + '</span><span>' + name + '</span><span class="obs-detail">' + (svc.status || 'unknown') + '</span></div>';
+    // SEGUNDO: Servicios caídos secundarios
+    if (secondaryDown.length > 0) {
+        html += '<div class="obs-subsection" style="color:#eab308;"><strong>🟡 SECUNDARIOS CAÍDOS:</strong></div>';
+        for (const [name, svc] of secondaryDown) {
+            html += '<div class="obs-item warning" style="background:#2a2a0a;padding:8px;border-radius:4px;margin:4px 0;">';
+            html += '<div style="font-weight:bold;">🟡 ' + name + '</div>';
+            html += '<div style="font-size:11px;color:#888;margin-left:20px;">Estado: <span style="color:#eab308;">' + (svc.status || 'unknown') + '</span></div>';
+            html += '</div>';
+        }
+    }
+    
+    // Activos críticos
+    html += '<div class="obs-subsection"><strong>🟢 Criticos activos:</strong></div>';
+    for (const [name, svc] of criticalUp) {
+        html += '<div class="obs-item ok"><span>🟢</span><span>' + name + '</span><span class="obs-detail">' + (svc.status || 'ok') + '</span></div>';
+    }
+    
+    // Activos secundarios
+    html += '<div class="obs-subsection" style="margin-top:10px;"><strong>🟢 Secundarios activos:</strong></div>';
+    for (const [name, svc] of secondaryUp) {
+        html += '<div class="obs-item ok"><span>🟢</span><span>' + name + '</span><span class="obs-detail">' + (svc.status || 'ok') + '</span></div>';
     }
     
     el.innerHTML = html;
@@ -265,28 +440,119 @@ function updateLogsSection(logs) {
     const metrics = logs.metrics || {};
     const recent = logs.recent || {};
     const errors = logs.errors || {};
-    let html = '<div class="obs-metrics"><span class="obs-metric ' + (metrics.has_critical_issues ? 'error' : 'ok') + '">📋 ' + (recent.total_lines || 0) + ' entradas</span><span class="obs-metric error">🔴 ' + (metrics.total_errors || 0) + ' errores</span><span class="obs-metric warning">⚠️ ' + (metrics.total_warnings || 0) + ' warnings</span></div>';
+    const warnings = logs.warnings || {};
+    
+    // Encabezado con métricas y botón de recarga
+    let html = '<div style="margin-bottom:10px;"><button onclick="reloadLogs()" style="background:#333;color:#fff;border:1px solid #555;padding:4px 8px;cursor:pointer;border-radius:4px;font-size:11px;">🔄 Recargar Logs</button></div>';
+    html += '<div class="obs-metrics"><span class="obs-metric ' + (metrics.has_critical_issues ? 'error' : 'ok') + '">📋 ' + (recent.total_lines || 0) + ' entradas totales</span><span class="obs-metric error">🔴 ' + (metrics.total_errors || 0) + ' errores</span><span class="obs-metric warning">⚠️ ' + (metrics.total_warnings || 0) + ' warnings</span></div>';
 
+    // Distribución por nivel
     const levels = recent.level_counts || {};
     if (Object.keys(levels).length > 0) {
-        html += '<div class="obs-subsection"><strong>Distribucion:</strong></div><div style="display:flex;gap:10px;flex-wrap:wrap;">';
+        html += '<div class="obs-subsection"><strong>Distribucion:</strong></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">';
         if (levels.INFO) html += '<span style="color:#22c55e;">● ' + levels.INFO + ' INFO</span>';
         if (levels.WARNING) html += '<span style="color:#eab308;">● ' + levels.WARNING + ' WARN</span>';
         if (levels.ERROR) html += '<span style="color:#ef4444;">● ' + levels.ERROR + ' ERROR</span>';
         if (levels.DEBUG) html += '<span style="color:#888;">● ' + levels.DEBUG + ' DEBUG</span>';
         html += '</div>';
     }
-    if (errors.entries && errors.entries.length > 0) {
-        html += '<div class="obs-subsection" style="margin-top:10px;"><strong>Errores recientes:</strong></div>';
-        for (const entry of errors.entries.slice(0, 3)) { html += '<div class="obs-item error" style="font-size:11px;">' + (entry.length > 80 ? entry.substring(0, 80) + '...' : entry) + '</div>'; }
+    
+    // TODOS LOS LOGS EN DETALLE - no solo resúmenes
+    const entries = recent.entries || [];
+    if (entries.length > 0) {
+        html += '<div class="obs-subsection" style="margin-top:15px;border-top:1px solid #333;padding-top:10px;"><strong>📜 TODOS LOS LOGS (' + entries.length + ' entradas):</strong></div>';
+        html += '<div style="max-height:400px;overflow-y:auto;background:#1a1a1a;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;line-height:1.4;">';
+        for (const entry of entries) {
+            const level = entry.level || 'INFO';
+            let color = '#22c55e'; // verde
+            let bg = 'transparent';
+            if (level === 'WARNING') { color = '#eab308'; bg = 'rgba(234,179,8,0.1)'; }
+            else if (level === 'ERROR') { color = '#ef4444'; bg = 'rgba(239,68,68,0.15)'; }
+            else if (level === 'DEBUG') { color = '#888'; }
+            
+            // Escapar HTML y mostrar el mensaje completo (sin truncar)
+            const msg = entry.message || '';
+            html += '<div style="color:' + color + ';background:' + bg + ';padding:2px 4px;margin:1px 0;border-radius:2px;word-break:break-all;">' + escapeHtml(msg) + '</div>';
+        }
+        html += '</div>';
     }
+    
+    // Errores específicos
+    if (errors.entries && errors.entries.length > 0) {
+        html += '<div class="obs-subsection" style="margin-top:15px;border-top:1px solid #333;padding-top:10px;"><strong>🔴 Detalle de errores (' + errors.entries.length + '):</strong></div>';
+        html += '<div style="background:#2a0a0a;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;max-height:200px;overflow-y:auto;">';
+        for (const entry of errors.entries) {
+            html += '<div style="color:#ef4444;padding:2px 4px;margin:1px 0;word-break:break-all;">' + escapeHtml(entry) + '</div>';
+        }
+        html += '</div>';
+    }
+    
+    // Warnings específicos
+    if (warnings.entries && warnings.entries.length > 0) {
+        html += '<div class="obs-subsection" style="margin-top:15px;border-top:1px solid #333;padding-top:10px;"><strong>⚠️ Detalle de warnings (' + warnings.entries.length + '):</strong></div>';
+        html += '<div style="background:#2a2a0a;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;max-height:200px;overflow-y:auto;">';
+        for (const entry of warnings.entries) {
+            html += '<div style="color:#eab308;padding:2px 4px;margin:1px 0;word-break:break-all;">' + escapeHtml(entry) + '</div>';
+        }
+        html += '</div>';
+    }
+    
     el.innerHTML = html;
+}
+
+// Función para escapar HTML
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 function updateLogsSectionFallback() {
     const el = document.getElementById('obs-logs-content');
     if (!el) return;
-    el.innerHTML = '<div class="obs-metrics"><span class="obs-metric ok">📋 0 entradas</span><span class="obs-metric error">🔴 0 errores</span><span class="obs-metric warning">⚠️ 0 warnings</span></div><div class="obs-item" style="color:#888;font-size:12px;">Logs no disponibles</div>';
+    
+    // Intentar obtener logs del endpoint directo
+    fetch(API + '/logs/recent?lines=200')
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.entries) {
+                let html = '<div class="obs-metrics"><span class="obs-metric ok">📋 ' + (data.total_lines || 0) + ' entradas totales</span></div>';
+                
+                const levels = data.level_counts || {};
+                html += '<div class="obs-subsection"><strong>Distribucion:</strong></div><div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px;">';
+                if (levels.INFO) html += '<span style="color:#22c55e;">● ' + levels.INFO + ' INFO</span>';
+                if (levels.WARNING) html += '<span style="color:#eab308;">● ' + levels.WARNING + ' WARN</span>';
+                if (levels.ERROR) html += '<span style="color:#ef4444;">● ' + levels.ERROR + ' ERROR</span>';
+                if (levels.DEBUG) html += '<span style="color:#888;">● ' + levels.DEBUG + ' DEBUG</span>';
+                html += '</div>';
+                
+                // TODOS LOS LOGS EN DETALLE
+                if (data.entries && data.entries.length > 0) {
+                    html += '<div class="obs-subsection" style="margin-top:15px;border-top:1px solid #333;padding-top:10px;"><strong>📜 TODOS LOS LOGS (' + data.entries.length + ' entradas):</strong></div>';
+                    html += '<div style="max-height:400px;overflow-y:auto;background:#1a1a1a;border-radius:4px;padding:8px;font-family:monospace;font-size:11px;line-height:1.4;">';
+                    for (const entry of data.entries) {
+                        const level = entry.level || 'INFO';
+                        let color = '#22c55e';
+                        let bg = 'transparent';
+                        if (level === 'WARNING') { color = '#eab308'; bg = 'rgba(234,179,8,0.1)'; }
+                        else if (level === 'ERROR') { color = '#ef4444'; bg = 'rgba(239,68,68,0.15)'; }
+                        else if (level === 'DEBUG') { color = '#888'; }
+                        
+                        const msg = entry.message || '';
+                        html += '<div style="color:' + color + ';background:' + bg + ';padding:2px 4px;margin:1px 0;border-radius:2px;word-break:break-all;">' + escapeHtml(msg) + '</div>';
+                    }
+                    html += '</div>';
+                }
+                
+                el.innerHTML = html;
+            } else {
+                el.innerHTML = '<div class="obs-metrics"><span class="obs-metric warning">📋 Logs no disponibles</span></div><div class="obs-item" style="color:#888;font-size:12px;">Endpoint no responde o sin datos</div>';
+            }
+        })
+        .catch(() => {
+            el.innerHTML = '<div class="obs-metrics"><span class="obs-metric warning">📋 Logs no disponibles</span></div><div class="obs-item" style="color:#888;font-size:12px;">Error al cargar logs</div>';
+        });
 }
 
 function updateAgentsSection(agents) {

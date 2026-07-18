@@ -652,6 +652,7 @@ python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 8000 --reload
 | **Health Check** | http://localhost:8000/health | Estado del sistema |
 | **Agentes Health** | http://localhost:8000/agents/health | Estado de todos los agentes |
 | **Observabilidad** | http://localhost:8000/ | Pestaña de observabilidad en BackOffice |
+| **Logs Detallados** | http://localhost:8000/logs/recent?lines=500 | API de logs en detalle |
 | **MCP Toolbox** | http://localhost:5000/ | Herramientas predefinidas |
 | **External Auditor** | http://localhost:8003/ | Auditoría A2A |
 
@@ -674,21 +675,48 @@ curl http://localhost:8000/agents/health
 type data\logs\invoiceflow.log
 ```
 
-### 9.6 Logging
+### 9.6 Sistema de Observabilidad
+
+El sistema incluye un **panel de observabilidad completo** accesible desde el BackOffice (pestaña "Observabilidad").
+
+#### Características:
+- ✅ **Dashboard de salud** con Health Score
+- ✅ **Estado de servicios** en tiempo real (Backend, Supplier, Contract, MCP, A2A)
+- ✅ **Estado de bases de datos** (suppliers, payments, chat_sessions)
+- ✅ **Logs en detalle** - TODAS las entradas con colores por nivel
+- ✅ **Estado de archivos** (inbox, processed, rejected)
+- ✅ **Estado de agentes** (Router, Validator, Orchestrator, etc.)
+- ✅ **Integraciones RAG/MCP/A2A**
+
+#### Endpoints de Observabilidad:
+```bash
+# Endpoint completo de observabilidad
+curl http://localhost:8000/health/observability
+
+# Logs recientes (últimas 500 líneas)
+curl "http://localhost:8000/logs/recent?lines=500"
+```
+
+### 9.7 Logging
 
 Los logs se guardan automáticamente en:
 ```
 data/logs/invoiceflow.log
 ```
 
-Con rotación automática (10MB por archivo, 5 backups). Para ver logs en tiempo real:
+Con rotación automática (10MB por archivo, 5 backups). Para ver logs:
 ```bash
-# Windows
+# Ver todos los logs en consola
 type data\logs\invoiceflow.log
 
-# Linux/macOS
-cat data/logs/invoiceflow.log
+# O desde el navegador: BackOffice > Observabilidad > Sección "Logs"
 ```
+
+#### Niveles de Log:
+- 🟢 **INFO** - Eventos normales del sistema
+- 🟡 **WARNING** - Situaciones que requieren atención
+- 🔴 **ERROR** - Errores que afectan el funcionamiento
+- ⚪ **DEBUG** - Información de depuración
 
 ---
 
