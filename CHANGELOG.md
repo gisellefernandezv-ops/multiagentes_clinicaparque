@@ -4,14 +4,122 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
+## [3.0.0] — 2026-07-18
+
+### 🎉 Release Final — Sistema Multiagente Completo
+
+> Sistema listo para entrega del Trabajo Práctico de Sistemas Multiagentes.
+
+---
+
+### ✨ Added
+
+#### Sistema Multiagente Completo (Google ADK)
+- **6 Agentes implementados** con roles específicos:
+  - `InvoiceOrchestrator` (root agent) — Coordina el flujo completo
+  - `RouterAgent` — Clasificador de intenciones del chat
+  - `ValidatorAgent` — Valida proveedores
+  - `ContractAgent` — Controla límites contractuales con RAG
+  - `PaymentAgent` — Registra pagos en SQLite
+  - `InvoiceManagerAgent` — Gestiona archivos y extracción
+- **State compartido** entre agentes via `DatabaseSessionService`
+- **Sub-agentes** delegables desde el orquestador
+
+#### MCP Toolbox Server (Puerto 5000)
+- **5 herramientas predefinidas** en YAML:
+  - `get_supplier_status` — Obtiene estado de proveedor
+  - `check_supplier_active` — Verifica si está activo
+  - `list_active_suppliers` — Lista proveedores activos
+  - `get_supplier_by_cuit` — Busca por CUIT
+  - `check_supplier_contract` — Verifica contrato existente
+- **Configuración via YAML** (`mcp_config/tools.yaml`)
+- **Solo consultas SELECT** (seguridad)
+
+#### A2A Protocol (Agente Externo)
+- **ExternalAuditorAgent** en `a2a/external_auditor_agent/`
+- **Puerto 8003** — Servidor independiente
+- **Auditoría de facturas** escaladas (> $500.000)
+- **Dictámenes** con hallazgos categorizados
+
+#### Guardrails Mejorados
+- **26 reglas** en 4 categorías:
+  - **VR** (Validación Estructural): 7 reglas
+  - **BR** (Reglas de Negocio): 10 reglas
+  - **SR** (Seguridad): 5 reglas
+  - **CR** (Continuidad): 3 reglas
+- **Templates en YAML** (`guardrails/rules.yaml`)
+- **Guardrail Engine** con evaluación prioritaria
+
+#### RAG con ChromaDB
+- **Contract Service** (puerto 8002)
+- **Embeddings** con Gemini Embedding 001
+- **Búsqueda semántica** en contratos
+- **Indexación automática** de nuevos contratos
+
+#### Machine Learning
+- **Modelo de riesgo** en `ml/risk_model.py`
+- **Features**: monto, antigüedad, historial, fraccionamiento
+- **scikit-learn** para clasificación
+- **Tool integrada** en el flujo de validación
+
+#### Evaluación con LLM as a Judge
+- **Golden Cases** (6 casos de prueba)
+- **Gemini como juez** — evaluación semántica
+- **BertScore** para métricas de similitud
+- **Métricas**: accuracy, precision, recall
+
+#### Asistente IA "GI" Mejorado
+- **15+ intents** reconocidos
+- **Memoria conversacional** con sesiones persistentes
+- **Entity extraction** automática (supplier_id, amount, mode)
+- **Acciones ejecutables** sobre el sistema:
+  - Modificar límites de contratos
+  - Activar/desactivar proveedores
+  - Procesar facturas
+  - Consultar estados
+- **Confirmaciones** para acciones destructivas
+
+#### Observabilidad Completa
+- **Health checks** de todos los servicios
+- **Dashboard de métricas** en BackOffice
+- **Tracking de logs** por nivel
+- **Estado de agentes** en tiempo real
+- **Integración RAG** visible
+
+---
+
+### 🔄 Changed
+
+- **Backend** reorganizado en `app/backend/`
+- **Servicios** en `app/services/`
+- **Datos** en `app/data/` y `data/`
+- **Scripts de inicio** centralizados en `start_servers.py`
+- **Frontend** con auto-refresh cada 10 segundos
+
+---
+
+### ✅ Validación del Sistema
+
+```
+invoice_approval_system/
+├── 6/6 Golden Cases PASS (100%)
+├── 26 Guardrails rules
+├── 4 Microservicios operativos
+├── 6 Agentes ADK
+├── 9 Tools
+├── 5 MCP Toolbox tools
+└── Pass Rate: 100%
+```
+
+---
+
 ## [2.3.1] — 2026-07-17
 
 ### 🐛 Fixed
 
 **Fix de paths y documentación**:
-- Corrección de imports en A2A server.py (`from .agent`)
-- Fix de paths de módulos en scripts de inicio (`platform` → `app`)
-- Agregado de estilos CSS para componente status-summary
+- Corrección de imports en A2A server.py
+- Fix de paths de módulos en scripts de inicio
 - Actualización de .gitignore
 - Limpieza de archivos de test en processed/
 
@@ -23,31 +131,16 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 **Observabilidad Completa V3** — Sistema de monitoreo integral:
 
-- **Health Score dinámico** con cálculo ponderado (100% = healthy, 70% = degraded, <70% = unhealthy)
+- **Health Score dinámico** con cálculo ponderado (100% = healthy, 70% = degraded)
 - **8 secciones de monitoreo** en la UI:
-  - 🔴 **Servicios**: Backend, Supplier Service, Contract Service, MCP Toolbox, External Auditor A2A
-  - 🗄️ **Bases de Datos**: suppliers.db, payments.db, chat_sessions.db, inbox.db con métricas
-  - 🔧 **Integraciones MCP**: Toolbox server status, herramientas configuradas, comando de inicio
-  - 📚 **RAG / ChromaDB**: Collections, documentos indexados, estado del índice
-  - 📁 **Sistema de Archivos**: inbox, processed, rejected, new_invoices, contracts
-  - 📋 **Logs del Sistema**: Distribución por niveles (INFO/WARNING/ERROR), errores recientes
-  - 🤖 **Agentes IA**: Router, Validator, Orchestrator, Contract, Payment, Invoice Manager
-  - 🔗 **Integración A2A**: External Auditor, agentes registrados
-
-- **Tracking de logs mejorado**:
-  - Conteo por nivel de severidad
-  - Errores y warnings recientes
-  - Distribución temporal de entradas
-  - Span del log (duración de sesión)
-
-- **Endpoint `/health/observability`** completo con fallback robusto
-
-**Archivos modificados/creados**:
-- `app/backend/health_extended.py` — Módulo V3 completo con manejo de errores
-- `app/frontend/index.html` — Nueva estructura de página observabilidad
-- `app/frontend/observability.js` — Funciones de renderizado + fallback
-- `app/frontend/observability.css` — Estilos para observabilidad
-- `docs/SPECS_OBSERVABILIDAD.md` — Documentación V3.0.0
+  - 🔴 Servicios: Backend, Supplier, Contract, MCP Toolbox, External Auditor
+  - 🗄️ Bases de Datos: suppliers.db, payments.db, chat_sessions.db, inbox.db
+  - 🔧 Integraciones MCP
+  - 📚 RAG / ChromaDB
+  - 📁 Sistema de Archivos
+  - 📋 Logs del Sistema
+  - 🤖 Agentes IA
+  - 🔗 Integración A2A
 
 ---
 
@@ -56,19 +149,12 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 ### ✨ Added
 
 **Procesamiento automático de facturas (BUG-022)**:
-- Cuando se sube una factura al inbox, se procesa automáticamente
-- No requiere apretar el botón "Procesar"
-- El watcher detecta archivos nuevos y los procesa con el orchestrator
-- Mueve archivos procesados a `app/data/processed/`
-- Mueve archivos con error a `app/data/rejected/`
+- File watcher detecta archivos nuevos en inbox
+- Procesa automáticamente con el orchestrator
+- Mueve archivos a processed/ o rejected/
 
 **Auto-refresh del Frontend**:
-- Inbox y Dashboard se actualizan automáticamente cada 10 segundos
-- No necesita recargar la página manualmente
-
-**Archivos modificados**:
-- `app/backend/main.py` — Callback `auto_process_invoice()` integrado al watcher
-- `app/frontend/app.js` — Auto-refresh cada 10 segundos
+- Inbox y Dashboard se actualizan cada 10 segundos
 
 ---
 
@@ -77,121 +163,32 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 ### 🐛 Fixed
 
 **Parser de facturas (BUG-021)**:
-- **Formatos soportados**: Ahora reconoce los 3 formatos de facturas
-  - Estándar AFIP: `N° XXXX-XXXXXXXX`
-  - Formato nuevo: `Numero: FC-2026-SUP001-NUEVA-3`
-  - Formato simple: `invoice_id: FC-XXX`
-- **Fecha de emisión**: Corregido para `Fecha:` y `FECHA:`
-- **Monto**: Corregido `_parse_amount_ar()` para parsear `25,000.00` → `25000.0`
-- **Campos extraídos**: `invoice_id`, `invoice_date`, `amount` ahora funcionan correctamente
-
-**Archivos modificados**:
-- `app/backend/watcher.py` — Parser mejorado
-- `app/backend/inbox_router.py` — Modelo InboxItem con campos adicionales
+- Formatos soportados: AFIP estándar, nuevo formato, simple
+- Fecha de emisión corregida
+- Monto parseado correctamente
 
 ---
 
 ## [2.0.0] — 2026-07-13
 
-### 🎉 Release Final — Sistema 100% Operativo
+### 🎉 Release — Sistema 100% Operativo
 
-> **Validación**: 60/60 checks PASS | 6/6 Golden Cases PASS | 100% Pass Rate
+> Validación: 60/60 checks PASS | 6/6 Golden Cases PASS | 100% Pass Rate
 
 ---
 
 ### ✨ Added
 
-#### Asistente IA "GI" con Memoria y Acciones (SPEC_013)
-- **Chat conversacional** integrado en BackOffice
-- **Memoria de sesión**: las últimas 5 interacciones se persisten en `chat_sessions.db`
-- **Acciones ejecutables** (15+ intents):
-  - `set_contract_limit`: cambiar límite de contrato
-  - `set_contract_mode`: cambiar modo EXACTO/NO_SUPERAR
-  - `activate_supplier` / `deactivate_supplier`
-  - `update_supplier_field`: cambiar email, teléfono, nombre, etc.
-  - `delete_supplier` con confirmación
-  - `memory_action`: "ahora desactiva ese mismo"
-- **Entity extraction**: detecta supplier_id, amount, mode, field automáticamente
-- **Confirmaciones** para acciones destructivas
-- **Mensaje de bienvenida** al entrar a la pestaña
-- Endpoints REST: `POST /chat`, `GET/POST/DELETE /chat/sessions/{id}`
+#### Asistente IA "GI" (SPEC_013)
+- Chat conversacional con memoria
+- 15+ intents con acciones ejecutables
+- Entity extraction automática
+- Confirmaciones para acciones destructivas
 
-#### ABM de Proveedores y Contratos (SPEC_012)
-- **CRUD completo** de proveedores (POST/PUT/DELETE/GET)
-- **Gestión de contratos** con `mode` (EXACTO o NO_SUPERAR)
-- **Auto-generación** de `supplier_id` (SUP00X)
-- **Validación de CUIT** único
-- **Baja lógica** (`status = INACTIVE`)
-- **Nueva tabla `contracts`** en `suppliers.db`
-- **Integración con orchestrator**: validación según `mode`
-- Endpoints proxy en backend (same-origin para evitar CORS)
-- UI completa: modal alta/edición, búsqueda, tabla responsive
-
-#### Especificaciones Nuevas
-- `docs/SPECS_012_PROVEEDORES.md`
-- `docs/SPECS_013_CHAT_IA.md`
-- `docs/SPECS_000_INDICE.md` actualizado
-
-### 🐛 Fixed
-
-**20+ bugs resueltos** (ver `bugs/`):
-
-| Componente | Bugs | Descripción |
-|------------|------|-------------|
-| Frontend API | BUG-001 | API path mismatch (`/api/*` vs `/*`) |
-| Dashboard | BUG-002 | Campos incorrectos (`approved` vs `decisions.APPROVED`) |
-| Inbox/History | BUG-003, BUG-004 | Formato JSON incorrecto |
-| Chat | BUG-005 | Campo `response` vs `message` |
-| Cache | BUG-008, BUG-009 | Browser cachea archivos antiguos |
-| CORS | BUG-011 | Cross-origin bloqueado |
-| Modal | BUG-013 | Modal no superpone correctamente |
-| Factura B | BUG-014, BUG-015 | Formato real FC-PV-NRO + tipos A/B/C |
-| Proveedores | BUG-016, BUG-017, BUG-018 | ABM completo + UI responsive |
-| Chat IA | BUG-019, BUG-020 | Entendimiento de "montos" + acciones |
-| **Procesamiento automático** | BUG-022 | Facturas procesadas al subir al inbox |
-| **Auto-refresh frontend** | BUG-022 | Inbox/Dashboard se actualizan cada 10s |
-
-### ✅ Validación Completa del Sistema
-
-```
-FULL_ANALYSIS_REPORT.json — 2026-07-13
-├── 60/60 checks PASS (100%)
-├── 6/6 Golden Cases PASS (100%)
-├── Pass Rate: 100.0%
-└── Todos los servicios operativos
-```
-
-| Servicio | Puerto | Estado |
-|----------|--------|--------|
-| Backend | 8000 | ✅ Operativo |
-| Supplier Service | 8001 | ✅ Operativo |
-| Contract Service | 8002 | ✅ Operativo |
-| External Auditor | 8003 | ✅ Operativo |
-
-### 🔄 Changed
-
-- **Chat backend** (`chat_router.py`) reescrito completamente (350+ líneas)
-- **Supplier service** v2.0.0 con tabla `contracts`
-- **Frontend** responsive design (mobile/tablet/desktop)
-- **Listings** del inbox muestran fecha de emisión
-- **Facturas** con formato real: `FC-2026-SUP001-NUEVA-1.txt`
-- **Orchestrator** usa `supplier_client.check_contract()` integrado
-
----
-
-> ℹ️ **Nota**: La versión 1.1.0 fue skippeada. Toda la funcionalidad planeada se integró en v2.0.0.
-
-## [1.1.0] — 2025-07-13
-
-### 🎯 Características Planned
-
-- [ ] Integración completa con Google ADK Eval
-- [ ] Dashboard en tiempo real con WebSockets
-- [ ] Notificaciones push al proveedor
-- [ ] Exportación de reportes en PDF/Excel
-- [ ] Integración con sistema contable externo
-- [ ] Módulo de reporting avanzado
-- [ ] API GraphQL como alternativa a REST
+#### ABM de Proveedores (SPEC_012)
+- CRUD completo de proveedores
+- Gestión de contratos (EXACTO/NO_SUPERAR)
+- Baja lógica con confirmación
 
 ---
 
@@ -200,72 +197,25 @@ FULL_ANALYSIS_REPORT.json — 2026-07-13
 ### ✨ Added
 
 #### Sistema de Guardrails Completo
-- **26 reglas de guardrail** implementadas en 4 categorías:
-  - **VR (Validación Estructural)**: 7 reglas para validar formato de archivos y datos
-  - **BR (Reglas de Negocio)**: 10 reglas para control de aprobación
-  - **SR (Seguridad)**: 5 reglas para protección contra accesos indebidos
-  - **CR (Continuidad)**: 3 reglas para manejo de fallas
-- Archivo de configuración `rules.yaml` como fuente única de verdad
-- Motor `guardrail_engine.py` que procesa las reglas en orden de prioridad
+- 26 reglas en 4 categorías (VR, BR, SR, CR)
+- Archivo de configuración `rules.yaml`
+- Motor de evaluación `guardrail_engine.py`
 
-#### Agentes ADK
-- **Router Agent**: Clasificador de intención para canal de chat
-  - Detecta: `new_invoice`, `check_status`, `chitchat`, `technical_support`
-  - Implementa reglas SR-03, SR-04, SR-05
-- **Invoice Manager Agent**: Gestor de facturas con herramientas de carpeta
-- **External Auditor Agent**: Agente A2A para revisión de facturas escaladas
+#### Agentes ADK Base
+- Router Agent, Invoice Manager Agent
+- External Auditor Agent
 
 #### Flujo B — Consulta de Estado
-- Nueva tool `invoice_status_tool.py`
-- Endpoint para consultar estado de facturas existentes
-- Resumen de estados por proveedor (5 badges)
+- Tool `invoice_status_tool.py`
+- Endpoint para consultar estado
 
 #### Sistema ML de Riesgo
-- Tool `ml_risk_tool.py` para evaluación de riesgo
+- Tool `ml_risk_tool.py`
 - Modelo entrenable con scikit-learn
-- Features: monto, antigüedad, historial de rechazos, fraccionamiento
-- Recomendaciones: aprobar, revisar, escalar
 
-#### Frontend Actualizado
-
-**Supplier Portal (Con Sidebar)**:
-- Header global con logo y datos del proveedor
-- Sidebar de navegación: Inicio, Subir factura, Mis facturas, Chat
-- Dashboard con 5 badges de estado
-- Upload de PDF con drag & drop
-- Historial filtrable
-- Modal de detalle contextual
-- Chat flotante
-
-**Back Office (Con Sidebar)**:
-- Sidebar de navegación: Dashboard, Inbox, Historial, Chat interno, Estado de Agentes, Evaluación, Docs
-- Dashboard con tarjetas de estados
-- Panel de Inbox con upload
-- Chat interno
-- Página de Observabilidad
-- Página de Evaluación
-- Documentación técnica
-
-#### Evaluación y Testing
-- **20 Golden Cases** en `invoiceflow-dataset.json`
-- Configuración de evaluación `eval_config.yaml`
-- Métricas: accuracy, precision, recall, latency, coverage
-
-#### A2A External Auditor
-- Servidor independiente en puerto 8003
-- Agente auditor externo para revisión de facturas escaladas
-- Dictámenes con hallazgos categorizados
-
-### 🔄 Changed
-
-- Backend con imports relativos
-- Frontend: navegación por sidebar (vs tabs originales)
-- CSS y JS actualizados para sidebar
-
-### 🐛 Fixed
-
-- Module Not Found Errors (imports platform/ vs módulo platform)
-- Path Issues en Windows (rutas con espacios)
+#### Frontend con Sidebar
+- Supplier Portal con navegación
+- Back Office con tabs
 
 ---
 
@@ -273,26 +223,10 @@ FULL_ANALYSIS_REPORT.json — 2026-07-13
 
 ### ✨ Added
 
-#### Sistema Multiagente ADK
-- Implementación base del orquestador con Google ADK
-- Agentes: `validator_agent`, `contract_agent`, `payment_agent`
-- Integración con ChromaDB para búsqueda RAG
-- Guardrails básicos (versión inicial)
-
-#### Microservicios
-- Supplier Service (puerto 8001) para validación de proveedores
-- Contract Service (puerto 8002) para control contractual
-- Base de datos SQLite para persistencia
-
-#### Frontend
-- Back Office con tabs para navegación
-- Supplier Portal con login básico
-- Dashboard con estadísticas de facturas
-
-#### Documentación
-- README.md con descripción del sistema
-- Especificaciones técnicas en docs/
-- Documento de guardrails
+- Sistema multiagente base con Google ADK
+- Agentes: validator, contract, payment
+- Integración con ChromaDB para RAG
+- Microservicios Supplier (8001) y Contract (8002)
 
 ---
 
@@ -302,7 +236,7 @@ FULL_ANALYSIS_REPORT.json — 2026-07-13
 
 - Estructura base del proyecto
 - Definición de agentes y herramientas
-- Base de datos con proveedores y contratos de prueba
+- Base de datos con proveedores de prueba
 - API REST básica con FastAPI
 
 ---
@@ -322,8 +256,10 @@ FULL_ANALYSIS_REPORT.json — 2026-07-13
 | Tipo | Cambio | Ejemplo |
 |------|--------|---------|
 | **MAJOR** | Cambios incompatibles en la API | 0.9.0 → 1.0.0 |
-| **MINOR** | Nuevas funcionalidades compatibles | 0.8.0 → 0.9.0 |
-| **PATCH** | Correcciones de bugs | 0.8.0 → 0.8.1 |
+| **MINOR** | Nuevas funcionalidades compatibles | 2.2.0 → 2.3.0 |
+| **PATCH** | Correcciones de bugs | 2.3.0 → 2.3.1 |
+
+---
 
 ## Estados de Release
 
@@ -335,56 +271,20 @@ FULL_ANALYSIS_REPORT.json — 2026-07-13
 
 ---
 
-## Migración entre Versiones
-
-### De 2.2.x a 2.3.0
-
-```bash
-# 1. Limpiar caché del navegador
-# 2. Los nuevos archivos JS/CSS se cargan automáticamente
-# 3. Endpoint /health/observability disponible
-```
-
-### De 0.9.x a 1.0.0
-
-```bash
-# 1. Actualizar dependencias
-pip install -r requirements.txt
-
-# 2. Limpiar caché de Python
-rmdir /s /q __pycache__
-rmdir /s /q platform\__pycache__
-rmdir /s /q agents\__pycache__
-
-# 3. Re-iniciar servicios
-python INICIAR.bat
-```
-
-### Configuración Requerida
-
-El archivo `rules.yaml` es nuevo en 1.0.0. Asegúrate de que exista en:
-```
-guardrails/rules.yaml
-```
-
----
-
 ## Roadmap
 
-### [2.4.0] — Q3 2026
+### [3.1.0] — Q4 2026
 - [ ] Persistencia de sesiones de chat con títulos editables
 - [ ] Streaming de respuestas (Server-Sent Events)
 - [ ] Sugerencias de acciones (autocomplete)
 - [ ] Integración real con PDF (parser de PDF con Gemini)
-- [ ] Mejoras de UI/UX en el dashboard
 
-### [2.5.0] — Q4 2026
+### [3.2.0] — Q1 2027
 - [ ] Dashboard en tiempo real con WebSockets
 - [ ] Notificaciones push al proveedor
 - [ ] Exportación de reportes en PDF/Excel
-- [ ] Integración con sistema contable externo
 
-### [3.0.0] — 2027
+### [4.0.0] — 2027
 - [ ] Microservicios con Kubernetes
 - [ ] Base de datos PostgreSQL
 - [ ] Autenticación OAuth2/OIDC
@@ -396,27 +296,30 @@ guardrails/rules.yaml
 
 | Rol | Descripción |
 |-----|-------------|
-| **Desarrollo** | Equipo InvoiceFlow |
+| **Desarrollo** | Giselle Fernández |
 | **Institución** | Universidad de Palermo |
 | **Materia** | Sistemas Multiagentes |
 | **Año** | 2025-2026 |
 
 ### Tecnologías Principales
 
-- Google ADK — Framework de agentes
-- FastAPI — Backend API
-- ChromaDB — Vector store (RAG)
-- SQLite — Base de datos
-- Google Gemini — Modelo de lenguaje
-- scikit-learn — Machine learning
-- **httpx** — Cliente HTTP async para acciones del chat IA
+| Tecnología | Uso |
+|------------|-----|
+| Google ADK | Framework de agentes |
+| FastAPI | Backend API |
+| ChromaDB | Vector store (RAG) |
+| SQLite | Base de datos |
+| Google Gemini | Modelo de lenguaje |
+| scikit-learn | Machine learning |
+| Model Context Protocol | MCP Toolbox |
+| BertScore | Métricas de evaluación |
 
 ---
 
 ## Licencia
 
-Este proyecto es **académico** y fue desarrollado con fines educativos.
+Este proyecto es **académico** y fue desarrollado con fines educativos para la materia de Sistemas Multiagentes de la Universidad de Palermo (2025-2026).
 
 ---
 
-*Última actualización: 2026-07-17*
+*Última actualización: 2026-07-18*

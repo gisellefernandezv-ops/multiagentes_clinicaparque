@@ -196,38 +196,46 @@ def extract_entities(text: str, session_id: Optional[str] = None) -> dict:
         if last:
             entities["invoice_id"] = last
 
-    # Amount (puede tener formato argentino)
-    # Primero buscar formato con $: "$200.000" o "$200,000"
-    m = re.search(r"\$\s*(\d{1,3}(?:[.,]\d{3})*(?:[.,]\d{2})?)", text)
+    # Amount (MEJORADO para formato argentino: 52.000, 52000, $52.000, etc)
+    # Primero buscar formato con $: "$200.000" o "$200,000" o "$52.000"
+    m = re.search(r"\$\s*([\d.]+)", text)
     if m:
-        amt_str = m.group(1)
+        amt_str = m.group(1).strip()
         # Detectar formato AR: 200.000 vs 200,000 vs 200.000,50
         if "," in amt_str and "." in amt_str:
             if amt_str.rfind(",") > amt_str.rfind("."):
                 amt_str = amt_str.replace(".", "").replace(",", ".")
             else:
                 amt_str = amt_str.replace(",", "")
-        elif "." in amt_str:
-            parts = amt_str.split(".")
-            if len(parts) == 2 and len(parts[1]) == 3:
-                # Es separador de miles: 200.000 = 200000
-                amt_str = amt_str.replace(".", "")
         elif "," in amt_str:
             parts = amt_str.split(",")
             if len(parts) == 2 and len(parts[1]) == 2:
                 amt_str = amt_str.replace(",", ".")
             elif len(parts) == 2 and len(parts[1]) == 3:
-                amt_str = amt_str.replace(",", "")
+                # Formato AR con miles: 52.000 -> 52000
+                amt_str = amt_str.replace(".", "").replace(",", "")
+        elif "." in amt_str:
+            parts = amt_str.split(".")
+            if len(parts) == 2 and len(parts[1]) == 3:
+                # Posible formato AR con miles: 52.000 = 52000
+                amt_str = amt_str.replace(".", "")
+            elif len(parts) == 2 and len(parts[1]) == 2:
+                # Formato con decimales: 52.00 = 52
+                amt_str = amt_str.replace(".", "")
         try:
             entities["amount"] = float(amt_str)
         except ValueError:
             pass
     else:
-        # Formato sin $: "200000" o "200k" o "200 mil"
-        m = re.search(r"\b(\d{4,7})\b", text)
+        # Formato sin $: buscar numeros grandes (4+ digitos)
+        # Incluye formato argentino: 52.000, 52000, 200k, 200 mil
+        m = re.search(r"\b(\d{1,3}(?:[.,]\d{3})+|\d{4,7})\b", text)
         if m:
+            amt_str = m.group(1)
+            # Limpiar formato argentino
+            amt_str = amt_str.replace(".", "").replace(",", "")
             try:
-                entities["amount"] = float(m.group(1))
+                entities["amount"] = float(amt_str)
             except ValueError:
                 pass
     if "amount" not in entities and session_id:
@@ -254,6 +262,9 @@ def extract_entities(text: str, session_id: Optional[str] = None) -> dict:
 # ----------------------------------------------------------------------
 
 INTENT_RE = [
+    # 0. context_related (preguntas sobre el ultimo resultado listado - ALTA PRIORIDAD)
+    (re.compile(r"\b(cual\s+((fue?\s+)?la|el|es?)|la\s+(ultima|ultimo|anterior|pasada)|ultima|ultimo|anterior)\b", re.I),
+     "context_related"),
     # 1. process_all
     (re.compile(r"\b(proces[áa]|aprueb[áa]|revis[áa]).*(todo|Todas|all)\b", re.I),
      "process_all"),
@@ -308,6 +319,19 @@ INTENT_RE = [
     # 17. list_inbox
     (re.compile(r"\b(qu[ée]\s+(hay|facturas)|list.*inbox|pendientes|archivos\s+en|cuales.*facturas|facturas.*(hay|pendientes))\b", re.I),
      "list_inbox"),
+    # X. list_by_status (facturas por estado)
+    (re.compile(r"\b(cuantas?|cuenta|tengo|hay)\b.*\b(facturas?|aprobadas?|rechazadas?)\b", re.I),
+     "list_by_status"),
+    # X. listar_facturas
+    # X. listar_facturas (MEJORADO)
+    (re.compile(r"\blist(?:ar|o|ando|e)?\s*(?:las\s+)?(?:facturas?|todas?|facturitas?)", re.I),
+     "listar_facturas"),
+    # X. list_suppliers
+    (re.compile(r"\blistar?\s+proveedores?|ver\s+proveedores?", re.I),
+     "list_suppliers"),
+    # X. supplier_info
+    (re.compile(r"\binfo\b.*\b(SUP\d{3}|proveedor)", re.I),
+     "supplier_info"),
 ]
 
 
@@ -576,6 +600,158 @@ def handle_process_path(path_str: str) -> dict:
             "data": {"results": [_process_single_file(path)]}}
 
 
+def handle_list_by_status(message: str = "") -> dict:
+    """Lista facturas por estado."""
+    if not settings.payments_db.exists():
+        return {"intent": "list_by_status", "message": "No hay datos aun.", "data": {}}
+    
+    msg_lower = message.lower()
+    if "aprobad" in msg_lower:
+        estado = "APPROVED"
+        label = "aprobadas"
+    elif "rechazad" in msg_lower:
+        estado = "REJECTED"
+        label = "rechazadas"
+    elif "escalad" in msg_lower:
+        estado = "ESCALATED"
+        label = "escaladas"
+    else:
+        estado = None
+        label = "todas"
+    
+    with sqlite3.connect(str(settings.payments_db)) as conn:
+        conn.row_factory = sqlite3.Row
+        if estado:
+            rows = conn.execute("SELECT * FROM payments WHERE decision = ? ORDER BY id DESC LIMIT 50", (estado,)).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM payments ORDER BY id DESC LIMIT 50").fetchall()
+    
+    items = [dict(r) for r in rows]
+    
+    if not items:
+        return {"intent": "list_by_status", "message": "No hay facturas " + label + ".", "data": {}}
+    
+    lines_out = ["Facturas " + label + " (" + str(len(items)) + " total):"]
+    for item in items[:15]:
+        lines_out.append("- " + str(item.get('invoice_id', '?')) + " | " + str(item.get('supplier_id', '?')) + " | $" + f"{item.get('amount', 0):,.2f}")
+    
+    return {"intent": "list_by_status", "message": "\n".join(lines_out), "data": {"items": items}}
+
+
+def handle_context_related(session_id: str) -> dict:
+    """Responde preguntas contextuales sobre el ultimo resultado listado."""
+    ctx = load_context(session_id, n=10)
+    
+    # Buscar el ultimo intent que haya listado algo
+    last_list_intent = None
+    last_assistant_msg = None
+    
+    for msg in reversed(ctx):
+        if msg.get("role") == "assistant":
+            last_assistant_msg = msg.get("content", "")
+            last_list_intent = msg.get("intent")
+            if last_list_intent in ("list_by_status", "history", "history_counts", "list_inbox", "list_suppliers", "listar_facturas", "totals"):
+                break
+    
+    if not last_assistant_msg:
+        return {
+            "intent": "context_related",
+            "message": "No tengo contexto previo. Decime que queres saber y te ayudo.",
+            "data": {}
+        }
+    
+    # Extraer el ultimo item de la respuesta
+    lines = last_assistant_msg.split("\n")
+    
+    # Buscar lineas que parezcan items (contienen $ o IDs de factura/proveedor)
+    items = []
+    for line in lines:
+        if ("$" in line or "FC-" in line or "SUP" in line) and ("-" in line or ":" in line):
+            items.append(line.strip())
+    
+    if items:
+        # El primer item es el mas reciente (orden DESC)
+        return {
+            "intent": "context_related",
+            "message": f"La ultima es: {items[0]}",
+            "data": {"last_item": items[0], "items": items}
+        }
+    
+    # Si no pudimos extraer items, responder con el mensaje original resumido
+    summary = last_assistant_msg[:300] + ("..." if len(last_assistant_msg) > 300 else "")
+    return {
+        "intent": "context_related",
+        "message": f"La ultima que liste fue: {summary}",
+        "data": {"last_message": last_assistant_msg}
+    }
+
+
+def handle_list_suppliers() -> dict:
+    """Lista todos los proveedores."""
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            r = client.get("http://localhost:8001/suppliers")
+            if r.status_code == 200:
+                suppliers = r.json()
+                lines_out = ["Proveedores (" + str(len(suppliers)) + " total):"]
+                for s in suppliers[:20]:
+                    status = "ACTIVO" if s.get("status") == "ACTIVE" else "INACTIVO"
+                    lines_out.append("- " + s['supplier_id'] + " - " + s['name'] + " (" + status + ")")
+                return {"intent": "list_suppliers", "message": "\n".join(lines_out), "data": {}}
+    except:
+        pass
+    return {"intent": "list_suppliers", "message": "Error al obtener proveedores", "data": {}}
+
+
+def handle_supplier_info(entities: dict) -> dict:
+    """Muestra info de un proveedor."""
+    import re
+    sid = entities.get("supplier_id")
+    raw = entities.get("raw_message", "")
+    
+    if not sid:
+        match = re.search(r"\bSUP\d{3}\b", raw)
+        if match:
+            sid = match.group(0)
+    
+    if not sid:
+        return {"intent": "supplier_info", "message": "Decime que proveedor. Ejemplo: info de SUP001", "data": {}}
+    
+    try:
+        with httpx.Client(timeout=5.0) as client:
+            r = client.get("http://localhost:8001/suppliers/" + sid)
+            if r.status_code == 200:
+                s = r.json()
+                status = "ACTIVO" if s.get("status") == "ACTIVE" else "INACTIVO"
+                msg = "Proveedor: " + s['name'] + "\nID: " + s['supplier_id'] + "\nEstado: " + status
+                return {"intent": "supplier_info", "message": msg, "data": {}}
+            return {"intent": "supplier_info", "message": "No existe el proveedor " + sid, "data": {}}
+    except:
+        return {"intent": "supplier_info", "message": "Error al consultar proveedor", "data": {}}
+
+
+def handle_listar_facturas(message: str = "") -> dict:
+    """Lista todas las facturas."""
+    if not settings.payments_db.exists():
+        return {"intent": "listar_facturas", "message": "No hay datos aun.", "data": {}}
+    
+    with sqlite3.connect(str(settings.payments_db)) as conn:
+        conn.row_factory = sqlite3.Row
+        rows = conn.execute("SELECT * FROM payments ORDER BY id DESC LIMIT 50").fetchall()
+    
+    items = [dict(r) for r in rows]
+    
+    if not items:
+        return {"intent": "listar_facturas", "message": "No hay facturas registradas.", "data": {}}
+    
+    lines_out = ["Todas las facturas (" + str(len(items)) + " total):"]
+    for item in items[:15]:
+        status_icon = {"APPROVED": "[OK]", "REJECTED": "[X]", "ESCALATED": "[!]"}.get(item.get('decision', ''), "[-]")
+        lines_out.append(status_icon + " " + str(item.get('invoice_id', '?')) + " | " + str(item.get('supplier_id', '?')) + " | $" + f"{item.get('amount', 0):,.2f}")
+    
+    return {"intent": "listar_facturas", "message": "\n".join(lines_out), "data": {"items": items}}
+
+
 def handle_list_inbox() -> dict:
     files = sorted(settings.inbox_dir.glob("*"))
     files = [f for f in files if f.is_file() and f.suffix.lower() in {".json", ".txt"}]
@@ -821,6 +997,16 @@ def chat(msg: ChatMessage):
         result = handle_process_one(invoice_id)
     elif intent == "process_path":
         result = handle_process_path(param)
+    elif intent == "list_by_status":
+        result = handle_list_by_status(msg.message)
+    elif intent == "listar_facturas":
+        result = handle_listar_facturas(msg.message)
+    elif intent == "context_related":
+        result = handle_context_related(session_id)
+    elif intent == "list_suppliers":
+        result = handle_list_suppliers()
+    elif intent == "supplier_info":
+        result = handle_supplier_info(entities)
     elif intent == "list_inbox":
         result = handle_list_inbox()
     elif intent == "history":

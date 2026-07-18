@@ -23,8 +23,8 @@
 
 | Componente | Versión Mínima | Notas |
 |------------|---------------|-------|
-| **Python** | 3.12+ | Requerido por google-adk 2.3 |
-| **pip** |Última | Gestor de paquetes Python |
+| **Python** | 3.12+ | Requerido por google-adk >=1.0.0 |
+| **pip** | Última | Gestor de paquetes Python |
 | **Git** | 2.0+ | Opcional, para clonar repositorio |
 
 ### Verificar Python
@@ -58,22 +58,22 @@ Debería mostrar: `Python 3.12.x`
 3. Renombrar a `invoice_approval_system`
 
 **Opción B: Git**
-```bash
-cd Desktop
+```batch
+cd %USERPROFILE%\Desktop
 git clone https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque.git invoice_approval_system
 ```
 
 ### Paso 3: Crear Entorno Virtual
 
-```bash
-cd Desktop\invoice_approval_system
+```batch
+cd %USERPROFILE%\Desktop\invoice_approval_system
 python -m venv .venv
 .venv\Scripts\activate
 ```
 
 ### Paso 4: Instalar Dependencias
 
-```bash
+```batch
 pip install -r requirements.txt
 ```
 
@@ -82,7 +82,7 @@ pip install -r requirements.txt
 | Script | Función |
 |--------|---------|
 | `setup.bat` | Instala todo automáticamente |
-| `INICIAR.bat` | Inicia los 3 servicios |
+| `start_servers.py` | Inicia todos los servicios |
 | `smoke_test.bat` | Verifica componentes |
 
 ---
@@ -127,8 +127,8 @@ pip install -r requirements.txt
 ### Paso 5: Scripts Automatizados
 
 ```bash
-chmod +x INICIAR.sh
-./INICIAR.sh
+chmod +x start_servers.py INICIAR.bat setup.bat smoke_test.bat
+./start_servers.py
 ```
 
 ---
@@ -172,8 +172,8 @@ pip install -r requirements.txt
 ### Paso 6: Scripts Automatizados
 
 ```bash
-chmod +x INICIAR.sh
-./INICIAR.sh
+chmod +x start_servers.py
+python start_servers.py
 ```
 
 ---
@@ -189,24 +189,20 @@ Crear archivo `.env` en la raíz del proyecto:
 cp .env.example .env
 
 # Editar
-# Agregar: GOOGLE_API_KEY=tu_api_key
+notepad .env
 ```
 
 ### 5.2 Archivo .env
 
 ```env
-# API Keys (requeridas)
-GOOGLE_API_KEY=tu_api_key_de_google
+# API Keys (requerida)
+GOOGLE_API_KEY=tu_api_key_de_google_ai_studio
 
-# Configuración de servicios
+# Configuración de servicios (opcional, defaults funcionan)
 INV_SUPPLIER_SERVICE_URL=http://127.0.0.1:8001
 INV_CONTRACT_SERVICE_URL=http://127.0.0.1:8002
-
-# Puerto del backend
 INV_PORT=8000
 INV_HOST=127.0.0.1
-
-# Habilitar watcher automático
 INV_ENABLE_WATCHER=true
 ```
 
@@ -215,6 +211,8 @@ INV_ENABLE_WATCHER=true
 ```bash
 python rag/ingest.py
 ```
+
+Esto carga los contratos demo en ChromaDB para el RAG.
 
 ---
 
@@ -226,45 +224,44 @@ python rag/ingest.py
 ┌─────────────────────────────────────────────────────────────┐
 │                     localhost                               │
 ├─────────────────────────────────────────────────────────────┤
-│  Puerto 8000 ──────► Backend (FastAPI)                     │
+│  Puerto 8000 ──────► Backend (FastAPI)                    │
 │                        ├── Back Office                       │
 │                        ├── Supplier Portal                   │
 │                        └── API REST                         │
 │                                                              │
-│  Puerto 8001 ──────► Supplier Service                       │
+│  Puerto 8001 ──────► Supplier Service (ABM)               │
 │                                                              │
-│  Puerto 8002 ──────► Contract Service                       │
+│  Puerto 8002 ──────► Contract Service (RAG)               │
 │                                                              │
-│  Puerto 8003 ──────► External Auditor (A2A) [opcional]     │
+│  Puerto 8003 ──────► External Auditor (A2A)               │
+│                                                              │
+│  Puerto 5000 ──────► MCP Toolbox Server                    │
 └─────────────────────────────────────────────────────────────┘
 ```
 
-### Método Automático
-
-Ejecutar el script correspondiente:
-- **Windows**: `INICIAR.bat`
-- **Linux/macOS**: `./INICIAR.sh`
-
-### Método Manual (3 terminales)
+### Método Automático (Recomendado)
 
 ```bash
-# Terminal 1 - Supplier Service
-python -m platform.services.supplier_service.main
-# Puerto: 8001
-
-# Terminal 2 - Contract Service
-python -m platform.services.contract_service.main
-# Puerto: 8002
-
-# Terminal 3 - Backend
-cd platform/backend
-python main.py
-# Puerto: 8000
+python start_servers.py
 ```
 
----
+Este script inicia todos los servicios en paralelo.
 
-## 7. Verificación
+### Método Manual (4 terminales)
+
+```bash
+# Terminal 1 - Supplier Service (Puerto 8001)
+python -m uvicorn app.services.supplier_service.main:app --host 127.0.0.1 --port 8001
+
+# Terminal 2 - Contract Service (Puerto 8002)
+python -m uvicorn app.services.contract_service.main:app --host 127.0.0.1 --port 8002
+
+# Terminal 3 - MCP Toolbox (Puerto 5000)
+python -m uvicorn app.services.toolbox_server.main:app --host 127.0.0.1 --port 5000
+
+# Terminal 4 - Backend (Puerto 8000)
+python -m uvicorn app.backend.main:app --host 127.0.0.1 --port 8000 --reload
+```
 
 ### URLs del Sistema
 
@@ -274,29 +271,44 @@ python main.py
 | **Supplier Portal** | http://localhost:8000/supplier/ | Portal del proveedor |
 | **API Docs** | http://localhost:8000/docs | Documentación Swagger |
 
+---
+
+## 7. Verificación
+
 ### Health Checks
 
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8001/health
 curl http://localhost:8002/health
+curl http://localhost:5000/health
+curl http://localhost:8000/agents/health
 ```
 
 ### Login de Prueba
 
-| ID | Nombre | Estado |
-|----|--------|--------|
-| SUP001 | TechCorp SA | ACTIVE |
-| SUP002 | Papeleria Norte SRL | ACTIVE |
-| SUP003 | Servicios Rapidos SA | INACTIVE |
-| SUP004 | Limpieza Total SRL | ACTIVE |
-| SUP005 | Consultoria Digital SA | ACTIVE |
+| ID | Nombre | Estado | Límite Contractual |
+|----|--------|--------|-------------------|
+| SUP001 | TechCorp SA | ACTIVE | $150,000 |
+| SUP002 | Papeleria Norte SRL | ACTIVE | $30,000 |
+| SUP003 | Servicios Rapidos SA | INACTIVE | — |
+| SUP004 | Limpieza Total SRL | ACTIVE | $80,000 |
+| SUP005 | Consultoria Digital SA | ACTIVE | $200,000 |
 
 ### Smoke Tests
 
 ```bash
-python -m guardrails.invoice_guardrail
-python -m evaluation.metrics
+# Verificar imports de agentes
+python -c "from agents.orchestrator import create_orchestrator; print('Agents OK')"
+
+# Verificar base de datos
+python -c "import sqlite3; c=sqlite3.connect('data/payments.db'); print(c.execute('SELECT COUNT(*) FROM payments').fetchone()[0], 'pagos')"
+
+# Verificar ChromaDB
+python -c "import chromadb; c=chromadb.PersistentClient('app/data/chroma_db'); print('ChromaDB OK:', c.list_collections())"
+
+# Verificar guardrails
+python -c "from guardrails.invoice_guardrail import apply_invoice_guardrail; print('Guardrails OK')"
 ```
 
 ---
@@ -317,7 +329,7 @@ pip install --force-reinstall -r requirements.txt
 ### Error: "Port already in use"
 
 **Windows**:
-```bash
+```batch
 netstat -ano | findstr :8000
 taskkill /PID <NUMERO> /F
 ```
@@ -358,29 +370,42 @@ invoice_approval_system/
 ├── requirements.txt      ← Dependencias
 ├── .env.example          ← Plantilla variables
 │
-├── agents/               ← Agentes ADK
-├── tools/                ← Herramientas
-├── guardrails/           ← Sistema de guardrails
+├── agents/               ← Agentes ADK (6 agentes)
+├── tools/                ← Herramientas (9 tools)
+├── guardrails/           ← Sistema de guardrails (26 reglas)
 ├── rag/                  ← RAG (ChromaDB)
 ├── ml/                   ← Machine Learning
-├── sessions/             ← Gestión de sesiones
-├── evaluation/           ← Evaluación y testing
+├── sessions/             ← Gestión de sesiones ADK
+├── evaluation/           ← Evaluación (Golden Cases + LLM Judge)
+├── mcp_config/           ← Configuración MCP
 │
-├── platform/             ← Backend y Frontend
-│   ├── backend/          # Puerto 8000
-│   ├── frontend/         # Back Office
-│   └── services/         # Microservicios
+├── app/                  ← Aplicación principal
+│   ├── backend/         # Puerto 8000
+│   │   ├── main.py
+│   │   ├── chat_router.py
+│   │   ├── inbox_router.py
+│   │   └── watcher.py
+│   ├── frontend/        # Back Office UI
+│   ├── services/
+│   │   ├── supplier_service/  # Puerto 8001
+│   │   ├── contract_service/ # Puerto 8002
+│   │   └── toolbox_server/   # Puerto 5000
+│   └── data/
+│       ├── suppliers.db
+│       ├── inbox.db
+│       ├── adk_sessions.db
+│       └── chroma_db/
 │
-├── supplier_portal/      ← Portal del proveedor
-├── a2a/                  ← Agente A2A externo
+├── supplier_portal/      ← Portal del proveedor UI
+├── a2a/                  ← Agente A2A externo (puerto 8003)
 │
 ├── data/                 ← Datos persistentes
-│   ├── payments.db       # SQLite
-│   ├── chroma_db/        # Vector store
-│   ├── contracts/        # Contratos .txt
-│   └── new_invoices/     # Facturas pendientes
+│   ├── payments.db
+│   ├── chat_sessions.db
+│   └── contracts/
 │
-└── docs/                 ← Documentación adicional
+├── docs/                 ← Documentación técnica
+└── bugs/                 ← Registro de bugs
 ```
 
 ---
@@ -389,10 +414,10 @@ invoice_approval_system/
 
 | Guía | Ubicación |
 |------|-----------|
-| Windows | [docs/INSTALACION_WINDOWS.md](docs/INSTALACION_WINDOWS.md) |
-| Linux | [docs/INSTALACION_LINUX.md](docs/INSTALACION_LINUX.md) |
-| macOS | [docs/INSTALACION_MACOS.md](docs/INSTALACION_MACOS.md) |
-| Guía Rápida | [docs/GUIA_RAPIDA.md](docs/GUIA_RAPIDA.md) |
+| Windows | `docs/INSTALACION_WINDOWS.md` |
+| Linux | `docs/INSTALACION_LINUX.md` |
+| macOS | `docs/INSTALACION_MACOS.md` |
+| Guía Rápida | `docs/GUIA_RAPIDA.md` |
 
 ---
 
@@ -402,9 +427,9 @@ invoice_approval_system/
 |---------|-------------|
 | [README.md](README.md) | Descripción general y arquitectura |
 | [CHANGELOG.md](CHANGELOG.md) | Historial de cambios |
-| [docs/especificacion_sistema_invoiceflow.md](docs/especificacion_sistema_invoiceflow.md) | Especificación técnica |
+| [docs/SPECS_*.md](docs/) | Especificaciones técnicas completas |
 
 ---
 
-**Versión del sistema**: 1.0.0  
-**Última actualización**: 2025-06-20
+**Versión del sistema**: 3.0.0  
+**Última actualización**: 2026-07-18

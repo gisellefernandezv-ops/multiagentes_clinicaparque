@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>InvoiceFlow — Back Office</title>
     <link rel="stylesheet" href="/static/style.css?v=2026070912">
+    <link rel="stylesheet" href="/static/observability.css?v=2026071301">
 </head>
 <body>
     <!-- ============================================================ -->
@@ -60,7 +61,7 @@
                     </li>
                     <li class="sidebar-item" data-page="observabilidad">
                         <span class="sidebar-icon">📡</span>
-                        <span class="sidebar-text">Estado de Agentes</span>
+                        <span class="sidebar-text">Observabilidad</span>
                     </li>
                     <li class="sidebar-item" data-page="evaluacion">
                         <span class="sidebar-icon">✅</span>
@@ -249,18 +250,66 @@
                 </div>
 
                 <!-- ============================================================ -->
-                <!-- ESTADO DE AGENTES (Observabilidad)                          -->
+                <!-- OBSERVABILIDAD COMPLETA V3                                  -->
                 <!-- ============================================================ -->
                 <div class="page" id="page-observabilidad">
-                    <h2 class="page-title">📡 Estado de Agentes</h2>
-                    <p class="page-hint">Monitoreo de servicios y agentes del sistema.</p>
+                    <h2 class="page-title">📡 Observabilidad Completa</h2>
+                    <p class="page-hint">Monitoreo integral de todos los componentes del sistema.</p>
 
-                    <div class="agents-grid" id="agents-grid">
-                        <!-- Generado dinámicamente por loadAgentsStatus() -->
-                        <div class="agent-card" style="grid-column: 1 / -1; text-align: center; padding: 32px;">
-                            <span style="color: #888;">Cargando estado de agentes…</span>
+                    <!-- Health Score Banner -->
+                    <div id="obs-health-banner" class="status-summary ok" style="margin-bottom: 20px;">
+                        <span class="status-icon">✅</span>
+                        <span class="status-text">
+                            <strong>Cargando...</strong><br>
+                            <small>Obteniendo estado del sistema...</small>
+                        </span>
+                    </div>
+
+                    <!-- Observability Grid -->
+                    <div id="obs-main-grid">
+                        <div class="obs-card" id="obs-services">
+                            <h3 class="obs-card-title">🔴 Servicios</h3>
+                            <div id="obs-services-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-databases">
+                            <h3 class="obs-card-title">🗄️ Bases de Datos</h3>
+                            <div id="obs-databases-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-mcp">
+                            <h3 class="obs-card-title">🔧 Integraciones MCP</h3>
+                            <div id="obs-mcp-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-rag">
+                            <h3 class="obs-card-title">📚 RAG / ChromaDB</h3>
+                            <div id="obs-rag-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-files">
+                            <h3 class="obs-card-title">📁 Sistema de Archivos</h3>
+                            <div id="obs-files-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-logs">
+                            <h3 class="obs-card-title">📋 Logs del Sistema</h3>
+                            <div id="obs-logs-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-agents">
+                            <h3 class="obs-card-title">🤖 Agentes IA</h3>
+                            <div id="obs-agents-content">Cargando...</div>
+                        </div>
+
+                        <div class="obs-card" id="obs-a2a">
+                            <h3 class="obs-card-title">🔗 Integración A2A</h3>
+                            <div id="obs-a2a-content">Cargando...</div>
                         </div>
                     </div>
+
+                    <!-- Issues Section -->
+                    <div id="obs-issues" style="margin-top: 20px;"></div>
                 </div>
 
                 <!-- ============================================================ -->
@@ -373,6 +422,7 @@
                         <h4>Endpoints API</h4>
                         <ul>
                             <li><code>GET /health</code> — Estado de microservicios</li>
+                            <li><code>GET /health/observability</code> — Observabilidad completa V3</li>
                             <li><code>GET /inbox</code> — Lista facturas en inbox</li>
                             <li><code>POST /inbox/upload</code> — Sube factura</li>
                             <li><code>POST /inbox/process/&lt;filename&gt;</code> — Procesa una</li>
@@ -389,7 +439,7 @@
         <!-- Footer global -->
         <footer class="app-footer">
             <div class="footer-info">
-                <span>InvoiceFlow v1.0.0</span>
+                <span>InvoiceFlow v3.0.0</span>
                 <span class="separator">|</span>
                 <span>Ambiente: dev</span>
                 <span class="separator">|</span>
@@ -399,5 +449,6 @@
     </div>
 
     <script src="/static/app.js?v=2026070912"></script>
+    <script src="/static/observability.js?v=2026071301"></script>
 </body>
 </html>

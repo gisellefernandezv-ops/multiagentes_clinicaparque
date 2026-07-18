@@ -73,6 +73,7 @@ document.addEventListener('DOMContentLoaded', () => {
     loadInbox();
     loadHistory();
     checkAgentsHealth();
+    loadChatHistory(); // Cargar historial de chat persistente
 });
 
 // ============================================================
@@ -332,11 +333,36 @@ document.getElementById('btn-hist-filter')?.addEventListener('click', () => {
 });
 
 // ============================================================
-// Chat interno  (FIX BUG-005)
+// Chat interno  (FIX BUG-005 + PERSISTENCIA)
 // ============================================================
 const internalChatMessages = document.getElementById('internal-chat-messages');
 const internalChatInput = document.getElementById('internal-chat-input');
 const internalChatSend = document.getElementById('internal-chat-send');
+
+// Session ID persistente (localStorage)
+let chatSessionId = localStorage.getItem('chat_session_id') || null;
+
+function loadChatHistory() {
+    if (!chatSessionId) return;
+    // Cargar mensajes del historial
+    fetch(`${API}/chat/sessions/${chatSessionId}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+            if (data && data.messages) {
+                data.messages.forEach(msg => {
+                    if (msg.role === 'user' || msg.role === 'assistant') {
+                        addInternalChatMessage(msg.role, msg.content);
+                    }
+                });
+            }
+        })
+        .catch(() => {});
+}
+
+function saveChatSession(sessionId) {
+    chatSessionId = sessionId;
+    localStorage.setItem('chat_session_id', sessionId);
+}
 
 function addInternalChatMessage(role, text) {
     const msg = document.createElement('div');
@@ -366,17 +392,25 @@ async function sendInternalChat() {
     internalChatInput.value = '';
 
     try {
+        const payload = { message: text };
+        if (chatSessionId) payload.session_id = chatSessionId;
+        
         const resp = await fetch(`${API}/chat`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ message: text })
+            body: JSON.stringify(payload)
         });
 
         if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
+        
+        // Guardar session_id para futuras requests
+        if (data.session_id && data.session_id !== chatSessionId) {
+            saveChatSession(data.session_id);
+        }
+        
         // FIX BUG-005: leer data.message (no data.response)
-        const prefix = data.intent && data.intent !== 'unknown' ? `[${data.intent}] ` : '';
-        addInternalChatMessage('system', prefix + (data.message || 'Sin respuesta'));
+        addInternalChatMessage('system', data.message || 'Sin respuesta');
     } catch (err) {
         console.error('[sendInternalChat]', err);
         addInternalChatMessage('system', `Error: ${err.message}`);

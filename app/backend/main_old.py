@@ -1,20 +1,19 @@
-"""InvoiceFlow Backend - API principal.
+"""InvoiceFlow Backend — API principal.
 
 Puertos:
-  8000 - Backend (este) + UI estatica
-  8001 - Supplier service (microservicio)
-  8002 - Contract service (microservicio)
+  8000 — Backend (este) + UI estática
+  8001 — Supplier service (microservicio)
+  8002 — Contract service (microservicio)
 
 Levanta:
   - API REST
   - File watcher del inbox (si enable_watcher=True)
-  - Sirve el frontend estatico
+  - Sirve el frontend estático
 """
 from __future__ import annotations
 
 import sys
 from contextlib import asynccontextmanager
-from datetime import datetime
 from pathlib import Path
 
 from fastapi import FastAPI
@@ -23,7 +22,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
-# Bootstrap: agregar raz del proyecto para imports legacy (guardrails, etc.)
+# Bootstrap: agregar raíz del proyecto para imports legacy (guardrails, etc.)
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -34,7 +33,6 @@ from .inbox_router import router as inbox_router
 from .chat_router import router as chat_router
 from .new_invoices_router import router as new_invoices_router
 from .supplier_portal_router import router as supplier_portal_router
-from .health_extended import get_full_observability
 
 
 # Watcher global (lo iniciamos en lifespan)
@@ -98,11 +96,11 @@ app.add_middleware(
 )
 
 
-# FIX BUG-008: middleware para evitar cache del browser en assets estaticos
+# FIX BUG-008: middleware para evitar cache del browser en assets estáticos
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):
     """Fuerza no-cache en /static/, /supplier/, /tests/ y en rutas de HTML.
 
-    Tambien aplica no-cache a:
+    También aplica no-cache a:
     - `/` (index.html del BackOffice)
     - `/supplier` (root del Supplier Portal)
     """
@@ -110,7 +108,7 @@ class NoCacheStaticMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
         response = await call_next(request)
         path = request.url.path
-        # Assets estaticos siempre re-descargar
+        # Assets estáticos siempre re-descargar
         if path.startswith(("/static/", "/supplier/", "/tests/")):
             response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
             response.headers["Pragma"] = "no-cache"
@@ -136,19 +134,19 @@ async def agents_health():
     consulta los microservicios internamente. Evita problemas de CORS.
 
     Divide los servicios en:
-    - SERVICIOS CRITICOS: InvoiceFlow Backend, Supplier Service (validacion de proveedores), Contract Service (RAG)
-    - SERVICIOS SECUNDARIOS: External Auditor (auditoria A2A)
+    - SERVICIOS CRÍTICOS: InvoiceFlow Backend, Supplier Service (validación de proveedores), Contract Service (RAG)
+    - SERVICIOS SECUNDARIOS: External Auditor (auditoría A2A)
     """
     import httpx
 
-    # Servicios criticos - son necesarios para el funcionamiento del sistema
+    # Servicios críticos - son necesarios para el funcionamiento del sistema
     critical_services = [
         ("invoiceflow-backend", f"http://127.0.0.1:{settings.port}/health"),
         ("supplier-service",   f"{settings.supplier_service_url}/health"),
         ("contract-service",    f"{settings.contract_service_url}/health"),
     ]
 
-    # Servicios secundarios - opcionales para auditoria extendida
+    # Servicios secundarios - opcionales para auditoría extendida
     secondary_services = [
         ("external-auditor",   "http://127.0.0.1:8003/health"),
     ]
@@ -221,7 +219,6 @@ async def suppliers_proxy_create(payload: dict):
             json=payload,
         )
         if r.status_code >= 400:
-            from fastapi import HTTPException
             raise HTTPException(r.status_code, r.text)
         return r.json()
 
@@ -238,23 +235,21 @@ async def suppliers_proxy_update(supplier_id: str, payload: dict):
             json=supplier_data,
         )
         if r.status_code >= 400:
-            from fastapi import HTTPException
             raise HTTPException(r.status_code, r.text)
-        # 2. Si se envio contrato, actualizarlo
+        # 2. Si se envió contrato, actualizarlo
         if "contract" in payload and payload["contract"]:
             rc = await client.post(
                 f"{settings.supplier_service_url}/suppliers/{supplier_id}/contract",
                 json=payload["contract"],
             )
             if rc.status_code >= 400:
-                from fastapi import HTTPException
                 raise HTTPException(rc.status_code, rc.text)
     return {"ok": True}
 
 
 @app.delete("/suppliers/proxy-delete/{supplier_id}")
 async def suppliers_proxy_delete(supplier_id: str):
-    """FIX BUG-016: baja logica de proveedor (proxy)."""
+    """FIX BUG-016: baja lógica de proveedor (proxy)."""
     async with httpx.AsyncClient(timeout=5.0) as client:
         r = await client.delete(f"{settings.supplier_service_url}/suppliers/{supplier_id}")
     return r.json()
@@ -262,7 +257,7 @@ async def suppliers_proxy_delete(supplier_id: str):
 
 @app.get("/health")
 def health():
-    """Health check basico."""
+    """Health check agregado."""
     import httpx
     services = {}
     for name, url in [
@@ -289,37 +284,6 @@ def health():
     }
 
 
-@app.get("/health/observability")
-async def health_observability():
-    """Health check completo con observabilidad del sistema.
-    
-    Incluye:
-    - Estado de todos los servicios (backend, supplier, contract, MCP Toolbox)
-    - Estado de bases de datos (SQLite: suppliers, payments, chat_sessions)
-    - Estado de integraciones (RAG/ChromaDB, File Watcher)
-    - Tracking de logs recientes
-    - Metricas de archivos (inbox, processed, rejected)
-    """
-    try:
-        return await get_full_observability(settings, PROJECT_ROOT)
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return {
-            "status": "error",
-            "error": str(e),
-            "traceback": traceback.format_exc(),
-            "timestamp": datetime.now().isoformat()
-        }
-
-
-@app.get("/logs/recent")
-async def logs_recent(lines: int = 100):
-    """Endpoint para obtener logs recientes del sistema."""
-    from .health_extended import get_recent_logs
-    return get_recent_logs(PROJECT_ROOT, lines)
-
-
 # Routers
 app.include_router(inbox_router)
 app.include_router(chat_router)
@@ -327,7 +291,7 @@ app.include_router(new_invoices_router)
 app.include_router(supplier_portal_router)
 
 
-# Frontend estatico
+# Frontend estático
 if settings.frontend_dir.exists():
     app.mount(
         "/static",
@@ -348,7 +312,7 @@ if EVAL_DATASETS_DIR.exists():
         name="eval_datasets",
     )
 
-# Supplier Portal estatico
+# Supplier Portal estático
 SUPPLIER_PORTAL_DIR = PROJECT_ROOT / "supplier_portal"
 if SUPPLIER_PORTAL_DIR.exists():
     app.mount(

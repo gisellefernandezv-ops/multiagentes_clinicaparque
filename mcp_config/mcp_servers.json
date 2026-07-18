@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "invoiceflow-toolbox": {
+      "command": "python",
+      "args": [
+        "-m",
+        "app.services.toolbox_server.main"
+      ],
+      "cwd": "invoice_approval_system",
+      "env": {}
+    }
+  }
+}

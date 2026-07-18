@@ -1,0 +1,137 @@
+
+/* ============================================================
+   OBSERVABILIDAD COMPLETA V3
+   ============================================================ */
+
+/* Observability Main Grid */
+#obs-main-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+/* Observability Card */
+.obs-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+}
+
+.obs-card-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Observability Metrics */
+.obs-metrics {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.obs-metric {
+    padding: 4px 10px;
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #f1f5f9;
+    color: var(--text);
+}
+
+.obs-metric.ok {
+    background: #dcfce7;
+    color: #15803d;
+}
+
+.obs-metric.warning {
+    background: #fef3c7;
+    color: #b45309;
+}
+
+.obs-metric.error {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+/* Observability Items */
+.obs-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    font-size: 13px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.obs-item:last-child {
+    border-bottom: none;
+}
+
+.obs-item.ok {
+    color: #15803d;
+}
+
+.obs-item.warning {
+    color: #b45309;
+}
+
+.obs-item.error {
+    color: #dc2626;
+}
+
+.obs-item span:first-child {
+    font-size: 14px;
+}
+
+.obs-item span:nth-child(2) {
+    flex: 1;
+    font-weight: 500;
+}
+
+.obs-detail {
+    font-size: 11px;
+    color: var(--text-light);
+}
+
+/* Observability Subsections */
+.obs-subsection {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-light);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 8px 0 4px 0;
+}
+
+/* Issues Box */
+.obs-issues-box {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 12px;
+    padding: 20px;
+    color: #991b1b;
+}
+
+.obs-issues-box h3 {
+    color: #991b1b;
+}
+
+/* Full width card */
+.obs-card.full-width {
+    grid-column: 1 / -1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    #obs-main-grid {
+        grid-template-columns: 1fr;
+    }
+}

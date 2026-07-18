@@ -1,0 +1,71 @@
+# MCP Toolbox Configuration - InvoiceFlow
+# Este archivo define las consultas permitidas para el ValidatorAgent
+# NO hardcode - solo consultas predefinidas de solo lectura
+
+database:
+  path: "app/data/suppliers.db"
+  type: "sqlite"
+
+tools:
+  # Consulta 1: Obtener estado de proveedor
+  - name: "get_supplier_status"
+    description: "Obtiene el estado y detalles de un proveedor por su ID"
+    query: >
+      SELECT supplier_id, name, status, category, email, phone, registered_at 
+      FROM suppliers 
+      WHERE supplier_id = :supplier_id
+    parameters:
+      - name: "supplier_id"
+        type: "string"
+        required: true
+
+  # Consulta 2: Verificar si proveedor está activo
+  - name: "check_supplier_active"
+    description: "Verifica si un proveedor está activo para aprobar facturas"
+    query: >
+      SELECT supplier_id, name, status 
+      FROM suppliers 
+      WHERE supplier_id = :supplier_id AND status = 'ACTIVE'
+    parameters:
+      - name: "supplier_id"
+        type: "string"
+        required: true
+
+  # Consulta 3: Listar todos los proveedores activos
+  - name: "list_active_suppliers"
+    description: "Lista todos los proveedores con estado ACTIVE"
+    query: >
+      SELECT supplier_id, name, category, email 
+      FROM suppliers 
+      WHERE status = 'ACTIVE'
+    parameters: []
+
+  # Consulta 4: Buscar proveedor por CUIT
+  - name: "get_supplier_by_cuit"
+    description: "Busca un proveedor específico por su número de CUIT"
+    query: >
+      SELECT supplier_id, name, status, category, email, phone 
+      FROM suppliers 
+      WHERE cuit = :cuit
+    parameters:
+      - name: "cuit"
+        type: "string"
+        required: true
+
+  # Consulta 5: Verificar contrato existente
+  - name: "check_supplier_contract"
+    description: "Verifica si un proveedor tiene contrato vigente"
+    query: >
+      SELECT supplier_id, filename, uploaded_at 
+      FROM contracts 
+      WHERE supplier_id = :supplier_id
+    parameters:
+      - name: "supplier_id"
+        type: "string"
+        required: true
+
+# Seguridad: Solo consultas SELECT, sin modificación de datos
+security:
+  readonly: true
+  allow_dml: false
+  allow_ddl: false

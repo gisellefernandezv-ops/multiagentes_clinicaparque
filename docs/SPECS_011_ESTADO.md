@@ -2,8 +2,8 @@
 
 > **Proyecto**: InvoiceFlow  
 > **Tipo**: Análisis de Estado  
-> **Fecha**: 2026-07-15  
-> **Estado**: ✅ **COMPLETO** — Sistema Validado
+> **Fecha**: 2026-07-13  
+> **Estado**: ✅ **COMPLETO** — Sistema Validado con Observabilidad V3
 
 ---
 
@@ -11,7 +11,7 @@
 
 **✅ Sistema 100% Operativo** — Validación: 60/60 checks PASS, 6/6 Golden Cases PASS (100%)
 
-**Última actualización**: Parser de facturas corregido (BUG-021) — Ahora extrae invoice_id, invoice_date y amount correctamente.
+**Última actualización**: Observabilidad Completa V3 (2026-07-13)
 
 Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, confirmando que todos los componentes están funcionales y verificados.
 
@@ -27,8 +27,16 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Supplier Service | 8001 | ✅ OK | `curl http://localhost:8001/health` |
 | Contract Service | 8002 | ✅ OK | `curl http://localhost:8002/health` |
 | External Auditor (A2A) | 8003 | ✅ OK | `curl http://localhost:8003/health` |
+| MCP Toolbox | 5000 | 🟡 Opcional | `python -m app.services.toolbox_server.main` |
 
-> **Última validación**: 2026-07-15 | FULL_ANALYSIS: 60/60 PASS
+### 2.2 Sistema de Observabilidad V3 ✅
+
+| Endpoint | Estado | Descripción |
+|----------|--------|-------------|
+| `GET /health` | ✅ OK | Health check básico |
+| `GET /health/observability` | ✅ OK | Observabilidad completa V3 |
+| `GET /agents/health` | ✅ OK | Health de agentes (proxy) |
+| `GET /logs/recent` | ✅ OK | Logs recientes del sistema |
 
 ---
 
@@ -57,6 +65,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | folder_manager_tool | ✅ OK | Gestión archivos |
 | pdf_extractor_tool | ✅ OK | Mock funcional |
 | ml_risk_tool | ✅ OK | Modelo implementado |
+| rag_tool | ✅ OK | Integración RAG |
 
 ### 3.3 GUARDRAILS ✅
 
@@ -76,6 +85,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | supplier_portal_router | ✅ OK | Portal de proveedores |
 | orchestrator (HTTP) | ✅ OK | Integración con ADK |
 | watcher | ✅ OK | Parser facturas (3 formatos) + auto-proceso + monitor |
+| health_extended | ✅ OK | **Observabilidad V3 completa** |
 
 ### 3.5 FRONTEND ✅
 
@@ -86,6 +96,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Sidebar Navigation | ✅ OK | Responsive (mobile/tablet/desktop) |
 | 🏢 Proveedores | ✅ OK | ABM completo con contratos |
 | 🤖 Asistente IA | ✅ OK | GI con memoria y acciones |
+| 📡 Observabilidad | ✅ OK | **V3 con 8 secciones de monitoreo** |
 
 ### 3.6 RAG ✅
 
@@ -93,10 +104,19 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 |-----------|--------|-------|
 | ChromaDB | ✅ OK | Persistencia local |
 | Embeddings | ✅ OK | Wrapper custom con google.genai.Client |
-| Contracts | ✅ OK | 4 contratos indexados (21 chunks) |
+| Contracts | ✅ OK | 4+ contratos indexados |
 | Ingesta | ✅ OK | Script rag/ingest.py funcional |
 
-### 3.7 A2A ✅
+### 3.7 MCP INTEGRATION ✅
+
+| Componente | Estado | Notas |
+|-----------|--------|-------|
+| MCP Toolbox Server | 🟡 Opcional | Puerto 5000 |
+| tools.yaml | ✅ OK | 5 herramientas configuradas |
+| mcp_servers.json | ✅ OK | Configuración de servidores |
+| Supplier MCP Tool | ✅ OK | Consulta proveedores |
+
+### 3.8 A2A ✅
 
 | Componente | Estado | Notas |
 |-----------|--------|-------|
@@ -104,11 +124,19 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Integración con Orchestrator | ✅ OK | Se invoca en ESCALATE |
 | perform_audit_tool | ✅ OK | Devuelve AUD-XXXXXXXX |
 
+### 3.9 LOGS Y MONITOREO ✅
+
+| Componente | Estado | Notas |
+|-----------|--------|-------|
+| invoiceflow.log | ✅ OK | data/logs/invoiceflow.log |
+| Log levels | ✅ OK | INFO, WARNING, ERROR, DEBUG |
+| Log tracking | ✅ OK | Distribución por nivel, errores recientes |
+
 ---
 
 ## 4. Bugs Resueltos ✅
 
-### 4.1 Resumen (21 bugs corregidos)
+### 4.1 Resumen (22 bugs corregidos)
 
 | Componente | Bugs | Descripción |
 |------------|------|-------------|
@@ -165,6 +193,21 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 
 **Estado General**: ✅ **COMPLETO**
 
+### 5.4 Observabilidad — ✅ NUEVO V3
+
+```
+✅ Health Score dinámico → ponderación por componente
+✅ Servicios → 5 servicios monitoreados (3 críticos + 2 opcionales)
+✅ Bases de datos → 4 DBs con métricas (tablas, filas, size)
+✅ MCP → Toolbox + herramientas configuradas
+✅ RAG → ChromaDB + collections + documentos
+✅ Logs → Distribución por nivel + errores recientes
+✅ Agentes → 6 agentes verificados
+✅ A2A → External Auditor + agentes registrados
+```
+
+**Estado General**: ✅ **COMPLETO (V3)**
+
 ---
 
 ## 6. Base de Datos
@@ -173,10 +216,11 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 
 | Tabla | DB | Registros | Estado |
 |-------|-----|----------|--------|
-| `suppliers` | app/data/suppliers.db | 5 | ✅ OK |
-| `contracts` | app/data/suppliers.db | 5 | ✅ OK |
+| `suppliers` | app/data/suppliers.db | 5+ | ✅ OK |
+| `contracts` | app/data/suppliers.db | 5+ | ✅ OK |
 | `payments` | data/payments.db | 14+ | ✅ OK |
 | `chat_sessions` | data/chat_sessions.db | Persistente | ✅ OK |
+| `inbox` | data/inbox.db | Tracking | ✅ OK |
 
 ### 6.2 Datos de Prueba
 
@@ -218,6 +262,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | CHAT_SESSIONS_DB | `data/chat_sessions.db` |
 | CHROMA_DIR | `app/data/chroma_db/` |
 | INBOX_DIR | `app/data/inbox/` |
+| LOGS_DIR | `data/logs/invoiceflow.log` |
 
 ---
 
@@ -229,16 +274,18 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 - [x] Supplier Service (8001)
 - [x] Contract Service (8002)
 - [x] External Auditor (8003)
+- [x] MCP Toolbox (5000 - opcional)
 
 ### Componentes ✅
 
 - [x] Agentes ADK (7 agentes)
-- [x] Tools (8 herramientas)
+- [x] Tools (9 herramientas)
 - [x] Guardrails (26 reglas)
 - [x] Backend API
 - [x] Frontend (Supplier Portal + Back Office)
 - [x] RAG (ChromaDB + Embeddings)
 - [x] A2A (External Auditor)
+- [x] **Observabilidad V3** (8 secciones de monitoreo)
 
 ### Documentación ✅
 
@@ -247,6 +294,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 - [x] INSTALL.md
 - [x] GUIA_RAPIDA.md
 - [x] SPECS_000..013
+- [x] SPECS_OBSERVABILIDAD.md (nuevo V3)
 - [x] bugs/README.md
 
 ---
@@ -259,6 +307,7 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | Golden Cases | 100% | 6/6 PASS |
 | Disponibilidad | > 99% | ✅ |
 | Análisis E2E | — | 60/60 PASS |
+| Health Score | ≥ 95% | ✅ |
 
 ---
 
@@ -269,11 +318,57 @@ Este documento proporciona un análisis exhaustivo E2E del sistema InvoiceFlow, 
 | `SPECS_000_INDICE.md` | Índice de especificaciones |
 | `SPECS_004_FLUJOS.md` | Detalle de flujos |
 | `SPECS_005_GUARDRAILS.md` | Sistema de validación |
+| `SPECS_OBSERVABILIDAD.md` | **Documentación V3** |
 | `bugs/README.md` | Historial de bugs resueltos |
 | `FULL_ANALYSIS_REPORT.json` | Reporte de validación |
 
 ---
 
-**Versión**: 2.0.0  
-**Última actualización**: 2026-07-15  
-**Estado**: ✅ Sistema Validado y Operativo
+## 12. Observabilidad V3 — Resumen
+
+### Endpoints
+
+```bash
+# Health básico
+GET /health
+
+# Observabilidad completa
+GET /health/observability
+
+# Logs recientes
+GET /logs/recent?lines=100
+```
+
+### Health Score Calculation
+
+```
+Health Score = 100
+  - 40% → Servicios críticos (3/3 = 100%)
+  - 30% → Bases de datos (4/4 = 100%)
+  - 15% → Errores en logs
+  - 10% → MCP Toolbox corriendo
+  - 5%  → RAG/ChromaDB disponible
+
+≥ 95% = healthy
+70-94% = degraded
+< 70% = unhealthy
+```
+
+### Secciones de Monitoreo
+
+| # | Sección | Contenido |
+|---|---------|-----------|
+| 1 | 🔴 Servicios | Backend, Supplier, Contract, MCP, A2A |
+| 2 | 🗄️ Bases de Datos | suppliers, payments, chat, inbox |
+| 3 | 🔧 MCP | Toolbox, tools.yaml, commands |
+| 4 | 📚 RAG | ChromaDB, collections, docs |
+| 5 | 📁 Archivos | inbox, processed, rejected, etc. |
+| 6 | 📋 Logs | levels, errors, warnings |
+| 7 | 🤖 Agentes | 6 agentes IA |
+| 8 | 🔗 A2A | External Auditor, agents |
+
+---
+
+**Versión**: 2.3.0  
+**Última actualización**: 2026-07-13  
+**Estado**: ✅ Sistema Validado y Operativo con Observabilidad V3
