@@ -2,7 +2,7 @@
 
 > **Trabajo Práctico — Sistemas Multiagentes** | Universidad de Palermo
 >
-> **Estado**: ✅ Operativo | **Versión**: 3.0.0 | **Última actualización**: 2026-07-18
+> **Estado**: ✅ Operativo | **Versión**: 3.1.0 | **Última actualización**: 2026-07-18
 >
 > 🔗 **Repositorio**: [GitHub](https://github.com/gisellefernandezv-ops/multiagentes_clinicaparque)
 
@@ -549,12 +549,13 @@ cp .env.example .env
 python rag/ingest.py
 ```
 
-### Scripts Automatizados (Windows)
+### Scripts de Inicio (Windows)
 
 | Script | Función |
 |--------|---------|
-| `start_servers.py` | Inicia todos los servicios automáticamente |
-| `INICIAR.bat` | Atajo para iniciar |
+| `INICIAR_SISTEMA.bat` | Inicia todos los servicios con menú interactivo |
+| `start_all.py` | Script Python para gestionar servicios |
+| `start_daemon.py` | Daemon que supervisa y reinicia servicios automáticamente |
 | `setup.bat` | Instala y configura todo |
 | `smoke_test.bat` | Verifica componentes |
 
