@@ -104,6 +104,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Middleware de logging (DEBE ir primero para capturar todos los requests)
+from .logging_middleware import LoggingMiddleware
+app.add_middleware(LoggingMiddleware)
+
 
 # FIX BUG-008: middleware para evitar cache del browser en assets estaticos
 class NoCacheStaticMiddleware(BaseHTTPMiddleware):

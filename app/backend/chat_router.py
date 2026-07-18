@@ -23,6 +23,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from .settings import settings
+from .logger import get_logger
 from .orchestrator import process_invoice
 from .watcher import parse_invoice_file, move_file
 
@@ -919,6 +920,9 @@ def _process_single_file(path: Path) -> dict:
 
 @router.post("", response_model=ChatResponse)
 def chat(msg: ChatMessage):
+    log = get_logger("invoiceflow.chat")
+    log.info(f"[CHAT] Mensaje: '{msg.message[:50]}...' | Session: {msg.session_id}")
+    
     # 1. Crear o recuperar sesión
     session_id = get_or_create_session(msg.session_id)
     save_message(session_id, "user", msg.message)
@@ -1035,8 +1039,11 @@ def chat(msg: ChatMessage):
             ),
         }
 
-    # 6. Guardar respuesta
-    save_message(session_id, "assistant", result.get("message", ""), result.get("intent"))
+    # 6. Guardar respuesta y loguear
+    result_msg = result.get("message", "")
+    result_intent = result.get("intent")
+    log.info(f"[CHAT] Response: intent={result_intent} | msg_len={len(result_msg)}")
+    save_message(session_id, "assistant", result_msg, result_intent)
 
     return ChatResponse(**result, session_id=session_id)
 
