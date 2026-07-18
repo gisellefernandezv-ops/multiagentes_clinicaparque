@@ -577,19 +577,52 @@ taskkill /PID <NUMERO_PID> /F
 
 ### 9.2 Inicio Automático (RECOMENDADO)
 
+**Opción 1: Script Python**
 ```bash
-# Ejecutar desde la carpeta invoice_approval_system
-python start_all.py
+# Ver estado actual
+python start_all.py status
+
+# Iniciar todos los servicios
+python start_all.py start
+
+# Detener todos los servicios
+python start_all.py stop
+
+# Reiniciar todos
+python start_all.py restart
 ```
 
-Este script inicia **todos los servicios automáticamente**:
-- Puerto 5000: MCP Toolbox Server
-- Puerto 8000: Backend FastAPI
-- Puerto 8001: Supplier Service
-- Puerto 8002: Contract Service
-- Puerto 8003: External Auditor A2A
+**Opción 2: Script Windows (doble clic)**
+```bash
+INICIAR_SISTEMA.bat
+```
 
-### 9.3 Inicio Manual (5 terminales)
+**Opción 3: Daemon de supervisión (automático)**
+```bash
+# Mantiene servicios corriendo y reinicia si se caen
+python start_daemon.py
+
+# Ver estado
+python start_daemon.py --status
+
+# Verificar una vez
+python start_daemon.py --once
+
+# Intervalo personalizado (10 segundos)
+python start_daemon.py --interval 10
+```
+
+### 9.3 Servicios Incluidos
+
+| Servicio | Puerto | Requerido | Descripción |
+|----------|--------|-----------|-------------|
+| Backend FastAPI | 8000 | ✅ | API principal con UI |
+| Supplier Service | 8001 | ✅ | ABM de proveedores |
+| Contract Service | 8002 | ✅ | RAG con ChromaDB |
+| MCP Toolbox | 5000 | ❌ | Herramientas predefinidas |
+| External Auditor | 8003 | ❌ | Auditoría A2A |
+
+### 9.4 Inicio Manual (5 terminales)
 
 ```bash
 # Terminal 1 - MCP Toolbox (Puerto 5000)

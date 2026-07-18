@@ -4,6 +4,32 @@ Historial de cambios notables del proyecto InvoiceFlow. Este documento sigue la 
 
 ---
 
+## [3.1.0] — 2026-07-18
+
+### 🎉 Sistema de Supervisión Completo
+
+**Daemon de supervisión (`start_daemon.py`):**
+- Mantiene todos los servicios corriendo automáticamente
+- Reinicia servicios caídos automáticamente
+- Verificación periódica configurable (default 30s)
+- Modo status: `python start_daemon.py --status`
+- Modo una vez: `python start_daemon.py --once`
+
+**Script de inicio mejorado (`start_all.py`):**
+- Estado de servicios con emojis (🟢🟡🔴)
+- Verificación de salud de cada servicio
+- Detección de puertos en uso
+- Kill automático de procesos colgados
+- Soporte para start/stop/status/restart
+
+**Script Windows (`INICIAR_SISTEMA.bat`):**
+- Atajo para usuarios Windows
+- Verifica entorno virtual
+- Instala dependencias si es necesario
+- Menú interactivo
+
+---
+
 ## [3.0.2] — 2026-07-18
 
 ### 🐛 Fixed
